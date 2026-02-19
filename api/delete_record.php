@@ -2,6 +2,7 @@
 /**
  * API Endpoint: Delete Record
  */
+require_once __DIR__ . '/../includes/api_auth.php';
 header('Content-Type: application/json');
 require_once __DIR__ . '/../config/database.php';
 

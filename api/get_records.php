@@ -2,6 +2,7 @@
 /**
  * API Endpoint: Get Records with Filters
  */
+require_once __DIR__ . '/../includes/api_auth.php';
 header('Content-Type: application/json');
 require_once __DIR__ . '/../config/database.php';
 
@@ -82,7 +83,7 @@ if ($id !== null && $id > 0) {
 
 $whereClause = !empty($where) ? "WHERE " . implode(" AND ", $where) : "";
 
-$sql = "SELECT * FROM hfdp_records $whereClause ORDER BY year DESC, cluster ASC, id DESC";
+$sql = "SELECT * FROM hfdp_records $whereClause ORDER BY year ASC, concerned_office_facility ASC";
 $stmt = $conn->prepare($sql);
 
 if (!empty($params)) {

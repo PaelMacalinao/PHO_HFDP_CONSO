@@ -2,6 +2,7 @@
 /**
  * API Endpoint: Update Record
  */
+require_once __DIR__ . '/../includes/api_auth.php';
 header('Content-Type: application/json');
 require_once __DIR__ . '/../config/database.php';
 
@@ -68,7 +69,7 @@ if (!is_numeric($input['number_of_units'])) {
     exit;
 }
 
-if (!is_numeric($input['costing'])) {
+if (!is_numeric(preg_replace('/[^\d.]/', '', $input['costing']))) {
     echo json_encode(['success' => false, 'message' => "Field 'costing' is required"]);
     exit;
 }
@@ -83,7 +84,7 @@ $type_of_health_facility = $db->escape($input['type_of_health_facility']);
 $number_of_units = intval($input['number_of_units']);
 $facilities = $concerned_office_facility;
 $target = $db->escape($input['target']);
-$costing = floatval($input['costing']);
+$costing = floatval(preg_replace('/[^\d.]/', '', $input['costing']));
 $fund_source = $db->escape($input['fund_source']);
 $presence_in_existing_plans = $db->escape($input['presence_in_existing_plans']);
 $remarks = isset($input['remarks']) ? $db->escape($input['remarks']) : null;

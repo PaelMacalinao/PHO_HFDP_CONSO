@@ -17,6 +17,12 @@ function setupEventListeners() {
     document.getElementById('btn-apply-filters').addEventListener('click', applyFilters);
     document.getElementById('btn-clear-filters').addEventListener('click', clearFilters);
 
+    // Export to Excel (uses current filters)
+    var exportBtn = document.getElementById('btn-export-excel');
+    if (exportBtn) {
+        exportBtn.addEventListener('click', exportToExcel);
+    }
+
     // Modal close
     const modal = document.getElementById('edit-modal');
     const closeBtn = document.querySelector('.close');
@@ -43,8 +49,12 @@ function loadRecords() {
     });
 
     fetch(`api/get_records.php?${params.toString()}`)
-        .then(response => response.json())
+        .then(response => {
+            if (response.status === 401) { window.location.href = 'login.php'; return; }
+            return response.json();
+        })
         .then(data => {
+            if (!data) return;
             if (data.success) {
                 displayRecords(data.data);
                 document.getElementById('record-count').textContent = data.count;
@@ -55,7 +65,7 @@ function loadRecords() {
         .catch(error => {
             console.error('Error:', error);
             document.getElementById('records-tbody').innerHTML = 
-                '<tr><td colspan="14" class="no-data">Error loading data. Please try again.</td></tr>';
+                '<tr><td colspan="13" class="no-data">Error loading data. Please try again.</td></tr>';
         });
 }
 
@@ -64,13 +74,12 @@ function displayRecords(records) {
     const tbody = document.getElementById('records-tbody');
     
     if (records.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="14" class="no-data">No records found.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="13" class="no-data">No records found.</td></tr>';
         return;
     }
 
     tbody.innerHTML = records.map(record => `
         <tr>
-            <td>${record.id}</td>
             <td>${record.year}</td>
             <td>${record.cluster}</td>
             <td>${record.concerned_office_facility || '-'}</td>
@@ -100,6 +109,136 @@ function formatCurrency(amount) {
     });
 }
 
+// Format costing for input field (with commas)
+function formatCostingForInput(amount) {
+    if (!amount) return '0.00';
+    return parseFloat(amount).toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+}
+
+// Strip commas and format for database
+function formatCostingForDB(value) {
+    return value.replace(/,/g, '');
+}
+
+// Update edit costing words display
+function updateEditCostingWords() {
+    const rawValue = this.value.replace(/,/g, '');
+    const value = parseFloat(rawValue) || 0;
+    const wordsElement = document.getElementById('edit-costing-words');
+    if (wordsElement) {
+        if (value > 0) {
+            wordsElement.textContent = numberToWords(value) + ' Pesos';
+        } else {
+            wordsElement.textContent = '';
+        }
+    }
+}
+
+// Handle edit costing input formatting
+function handleEditCostingInput(e) {
+    // Allow free typing - just validate and prevent invalid characters
+    let value = e.target.value;
+    
+    // Remove any non-numeric characters except decimal point
+    value = value.replace(/[^0-9.]/g, '');
+    
+    // Prevent multiple decimal points
+    const parts = value.split('.');
+    if (parts.length > 2) {
+        value = parts[0] + '.' + parts.slice(1).join('');
+    }
+    
+    // Limit to 2 decimal places
+    if (parts[1] && parts[1].length > 2) {
+        value = parts[0] + '.' + parts[1].substring(0, 2);
+    }
+    
+    // Update the value if it changed
+    if (e.target.value !== value) {
+        e.target.value = value;
+    }
+    
+    // Update words with the raw numeric value
+    const rawValue = value.replace(/,/g, '');
+    const numericValue = parseFloat(rawValue) || 0;
+    const wordsElement = document.getElementById('edit-costing-words');
+    if (wordsElement) {
+        if (numericValue > 0) {
+            wordsElement.textContent = numberToWords(numericValue) + ' Pesos';
+        } else {
+            wordsElement.textContent = '';
+        }
+    }
+}
+
+// Format edit costing on blur (ensure proper formatting)
+function formatEditCostingOnBlur() {
+    let value = this.value.trim();
+    
+    // If empty, set to 0.00
+    if (!value) {
+        this.value = '0.00';
+        updateEditCostingWords.call(this);
+        return;
+    }
+    
+    // Parse and format the value
+    const numericValue = parseFloat(value) || 0;
+    this.value = numericValue.toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+    
+    updateEditCostingWords.call(this);
+}
+
+// Convert number to words
+function numberToWords(num) {
+    if (num === 0) return 'Zero';
+    
+    const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
+    const teens = ['Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+    const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+    const scales = ['', 'Thousand', 'Million', 'Billion', 'Trillion'];
+    
+    function convertHundreds(n) {
+        let str = '';
+        if (n >= 100) {
+            str += ones[Math.floor(n / 100)] + ' Hundred ';
+            n %= 100;
+        }
+        if (n >= 20) {
+            str += tens[Math.floor(n / 10)] + ' ';
+            n %= 10;
+        } else if (n >= 10) {
+            str += teens[n - 10] + ' ';
+            return str.trim();
+        }
+        if (n > 0) {
+            str += ones[n] + ' ';
+        }
+        return str.trim();
+    }
+    
+    let result = '';
+    let scaleIndex = 0;
+    
+    while (num > 0) {
+        const chunk = num % 1000;
+        if (chunk > 0) {
+            const chunkWords = convertHundreds(chunk);
+            result = chunkWords + ' ' + scales[scaleIndex] + ' ' + result;
+        }
+        num = Math.floor(num / 1000);
+        scaleIndex++;
+    }
+    
+    return result.trim();
+}
+
 // Apply filters
 function applyFilters() {
     currentFilters = {
@@ -114,6 +253,17 @@ function applyFilters() {
     };
     
     loadRecords();
+}
+
+// Export to Excel: build URL from current filters and trigger download
+function exportToExcel() {
+    var params = new URLSearchParams();
+    Object.keys(currentFilters).forEach(function(key) {
+        if (currentFilters[key]) {
+            params.append(key, currentFilters[key]);
+        }
+    });
+    window.location.href = 'api/export_excel.php?' + params.toString();
 }
 
 // Clear filters
@@ -139,8 +289,12 @@ function clearFilters() {
 function editRecord(id) {
     // Fetch record data
     fetch(`api/get_records.php?id=${id}`)
-        .then(response => response.json())
+        .then(response => {
+            if (response.status === 401) { window.location.href = 'login.php'; return; }
+            return response.json();
+        })
         .then(data => {
+            if (!data) return;
             if (data.success && data.data.length > 0) {
                 const record = data.data[0];
                 showEditModal(record);
@@ -164,11 +318,10 @@ function showEditModal(record) {
                 <div class="form-group">
                     <label for="edit-year">Year <span class="required">*</span></label>
                     <select id="edit-year" required>
-                        <option value="2024" ${record.year == 2024 ? 'selected' : ''}>2024</option>
-                        <option value="2025" ${record.year == 2025 ? 'selected' : ''}>2025</option>
-                        <option value="2026" ${record.year == 2026 ? 'selected' : ''}>2026</option>
-                        <option value="2027" ${record.year == 2027 ? 'selected' : ''}>2027</option>
-                        <option value="2028" ${record.year == 2028 ? 'selected' : ''}>2028</option>
+                        ${Array.from({length: 2100 - 2024 + 1}, (_, i) => {
+                            const year = 2024 + i;
+                            return `<option value="${year}" ${record.year == year ? 'selected' : ''}>${year}</option>`;
+                        }).join('')}
                     </select>
                 </div>
                 <div class="form-group">
@@ -323,7 +476,8 @@ function showEditModal(record) {
                 </div>
                 <div class="form-group">
                     <label for="edit-costing">Costing</label>
-                    <input type="number" id="edit-costing" value="${record.costing || 0}" step="0.01" min="0" required>
+                    <input type="text" id="edit-costing" value="${record.costing || '0.00'}" required>
+                    <div id="edit-costing-words" class="number-to-words"></div>
                 </div>
                 <div class="form-group full-width">
                     <label for="edit-fund_source">Fund Source <span class="required">*</span></label>
@@ -369,6 +523,15 @@ function showEditModal(record) {
         updateRecord();
     });
     
+    // Initialize number-to-words converter for edit costing field
+    const editCostingInput = document.getElementById('edit-costing');
+    if (editCostingInput) {
+        editCostingInput.addEventListener('input', handleEditCostingInput);
+        editCostingInput.addEventListener('blur', formatEditCostingOnBlur);
+        // Initialize with current value - don't format immediately to allow natural typing
+        updateEditCostingWords.call(editCostingInput);
+    }
+    
     modal.style.display = 'block';
 }
 
@@ -385,7 +548,7 @@ function updateRecord() {
         number_of_units: document.getElementById('edit-number_of_units').value,
         facilities: document.getElementById('edit-concerned_office_facility').value,
         target: document.getElementById('edit-target').value,
-        costing: document.getElementById('edit-costing').value,
+        costing: formatCostingForDB(document.getElementById('edit-costing').value),
         fund_source: document.getElementById('edit-fund_source').value,
         presence_in_existing_plans: document.getElementById('edit-presence_in_existing_plans').value,
         remarks: document.getElementById('edit-remarks').value
@@ -398,8 +561,12 @@ function updateRecord() {
         },
         body: JSON.stringify(data)
     })
-    .then(response => response.json())
+    .then(response => {
+        if (response.status === 401) { window.location.href = 'login.php'; return; }
+        return response.json();
+    })
     .then(data => {
+        if (!data) return;
         if (data.success) {
             alert('Record updated successfully!');
             document.getElementById('edit-modal').style.display = 'none';
@@ -427,8 +594,12 @@ function deleteRecord(id) {
         },
         body: JSON.stringify({ id: id })
     })
-    .then(response => response.json())
+    .then(response => {
+        if (response.status === 401) { window.location.href = 'login.php'; return; }
+        return response.json();
+    })
     .then(data => {
+        if (!data) return;
         if (data.success) {
             alert('Record deleted successfully!');
             loadRecords();
