@@ -7,7 +7,7 @@
 // Database configuration
 define('DB_HOST', 'localhost');
 define('DB_USER', 'root');
-define('DB_PASS', '');
+define('DB_PASS', 'root');
 define('DB_NAME', 'pho_conso_hfdp');
 
 // Create database connection
@@ -15,17 +15,11 @@ class Database {
     private $conn;
     
     public function __construct() {
-        try {
-            $this->conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
-            
-            if ($this->conn->connect_error) {
-                throw new Exception("Connection failed: " . $this->conn->connect_error);
-            }
-            
-            $this->conn->set_charset("utf8mb4");
-        } catch (Exception $e) {
-            die("Database connection error: " . $e->getMessage());
+        $this->conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
+        if ($this->conn->connect_error) {
+            throw new Exception("Database connection failed: " . $this->conn->connect_error . ". Create the database with database/schema.sql in phpMyAdmin.");
         }
+        $this->conn->set_charset("utf8mb4");
     }
     
     public function getConnection() {
@@ -52,6 +46,3 @@ class Database {
         $this->conn->close();
     }
 }
-
-// Create global database instance
-$db = new Database();

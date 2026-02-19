@@ -3,13 +3,22 @@
  * API Endpoint: Create New Record
  */
 header('Content-Type: application/json');
-require_once '../config/database.php';
+require_once __DIR__ . '/../config/database.php';
 
+try {
 $db = new Database();
 $conn = $db->getConnection();
+if (!$conn) {
+    echo json_encode(['success' => false, 'message' => 'Database connection failed.']);
+    exit;
+}
 
 // Get JSON input
 $input = json_decode(file_get_contents('php://input'), true);
+if (!is_array($input)) {
+    echo json_encode(['success' => false, 'message' => 'Invalid request. Send JSON with required fields.']);
+    exit;
+}
 
 // Validate required fields (remarks is optional)
 $requiredKeys = [
@@ -88,8 +97,15 @@ $sql = "INSERT INTO hfdp_records (
 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
 $stmt = $conn->prepare($sql);
+if (!$stmt) {
+    echo json_encode([
+        'success' => false,
+        'message' => 'Database error: ' . $conn->error . '. Make sure you ran database/schema.sql to create the table.'
+    ]);
+    exit;
+}
 $stmt->bind_param(
-    'isssssisdsiss',
+    'isssssissdsss',
     $year, $cluster, $concerned_office_facility, $facility_level, $category,
     $type_of_health_facility, $number_of_units, $facilities, $target, $costing,
     $fund_source, $presence_in_existing_plans, $remarks
@@ -110,3 +126,11 @@ if ($stmt->execute()) {
 
 $stmt->close();
 $db->close();
+
+} catch (Throwable $e) {
+    header('Content-Type: application/json');
+    echo json_encode([
+        'success' => false,
+        'message' => 'Server error: ' . $e->getMessage()
+    ]);
+}

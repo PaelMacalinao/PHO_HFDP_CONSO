@@ -11,7 +11,11 @@ document.addEventListener('DOMContentLoaded', function() {
 // Handle form submission
 function handleFormSubmit(e) {
     e.preventDefault();
-    
+
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    if (submitBtn.disabled) return;
+    submitBtn.disabled = true;
+
     const formData = {
         year: document.getElementById('year').value,
         cluster: document.getElementById('cluster').value,
@@ -42,18 +46,35 @@ function handleFormSubmit(e) {
         !formData.presence_in_existing_plans
     ) {
         showMessage('Please fill in all required fields.', 'error');
+        submitBtn.disabled = false;
         return;
     }
-    
-    // Submit to API
-    fetch('api/create_record.php', {
+
+    // Submit to API (path relative to current page, e.g. /PHO_HFDP_CONSO/api/create_record.php)
+    const apiUrl = new URL('api/create_record.php', window.location.href).href;
+    fetch(apiUrl, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify(formData)
     })
-    .then(response => response.json())
+    .then(response => {
+        return response.text().then(function(text) {
+            const contentType = response.headers.get('content-type');
+            if (!response.ok) {
+                throw new Error('Server returned ' + response.status + (response.status === 404 ? '. Check that you open the app via http://localhost/... (not file://).' : ''));
+            }
+            if (!contentType || !contentType.includes('application/json')) {
+                throw new Error(text || 'Server returned non-JSON response');
+            }
+            try {
+                return JSON.parse(text);
+            } catch (_) {
+                throw new Error(text || 'Invalid server response');
+            }
+        });
+    })
     .then(data => {
         if (data.success) {
             showMessage('Record created successfully!', 'success');
@@ -64,12 +85,14 @@ function handleFormSubmit(e) {
                 window.location.href = 'index.php';
             }, 2000);
         } else {
-            showMessage('Error: ' + data.message, 'error');
+            showMessage('Error: ' + (data.message || 'Unknown error'), 'error');
         }
+        submitBtn.disabled = false;
     })
     .catch(error => {
         console.error('Error:', error);
-        showMessage('Error creating record. Please try again.', 'error');
+        showMessage('Error: ' + (error.message || 'Please try again.'), 'error');
+        submitBtn.disabled = false;
     });
 }
 
