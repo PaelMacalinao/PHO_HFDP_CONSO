@@ -20,7 +20,6 @@ function handleFormSubmit(e) {
         category: document.getElementById('category').value,
         type_of_health_facility: document.getElementById('type_of_health_facility').value,
         number_of_units: document.getElementById('number_of_units').value,
-        facilities: document.getElementById('facilities').value,
         target: document.getElementById('target').value,
         costing: document.getElementById('costing').value,
         fund_source: document.getElementById('fund_source').value,
@@ -29,8 +28,19 @@ function handleFormSubmit(e) {
     };
     
     // Validate required fields
-    if (!formData.year || !formData.cluster || !formData.concerned_office_facility || 
-        !formData.facility_level || !formData.category || !formData.fund_source) {
+    if (
+        !formData.year ||
+        !formData.cluster ||
+        !formData.concerned_office_facility ||
+        !formData.facility_level ||
+        !formData.category ||
+        !formData.type_of_health_facility ||
+        formData.number_of_units === '' ||
+        !formData.target ||
+        formData.costing === '' ||
+        !formData.fund_source ||
+        !formData.presence_in_existing_plans
+    ) {
         showMessage('Please fill in all required fields.', 'error');
         return;
     }

@@ -18,19 +18,74 @@ if (!isset($input['id']) || empty($input['id'])) {
 
 $id = intval($input['id']);
 
+// Validate required fields (remarks is optional)
+$requiredKeys = [
+    'year',
+    'cluster',
+    'concerned_office_facility',
+    'facility_level',
+    'category',
+    'type_of_health_facility',
+    'number_of_units',
+    'target',
+    'costing',
+    'fund_source',
+    'presence_in_existing_plans'
+];
+
+foreach ($requiredKeys as $key) {
+    if (!array_key_exists($key, $input)) {
+        echo json_encode(['success' => false, 'message' => "Field '$key' is required"]);
+        exit;
+    }
+}
+
+if (intval($input['year']) <= 0) {
+    echo json_encode(['success' => false, 'message' => "Field 'year' is required"]);
+    exit;
+}
+
+$requiredStrings = [
+    'cluster',
+    'concerned_office_facility',
+    'facility_level',
+    'category',
+    'type_of_health_facility',
+    'target',
+    'fund_source',
+    'presence_in_existing_plans'
+];
+
+foreach ($requiredStrings as $key) {
+    if (trim((string)$input[$key]) === '') {
+        echo json_encode(['success' => false, 'message' => "Field '$key' is required"]);
+        exit;
+    }
+}
+
+if (!is_numeric($input['number_of_units'])) {
+    echo json_encode(['success' => false, 'message' => "Field 'number_of_units' is required"]);
+    exit;
+}
+
+if (!is_numeric($input['costing'])) {
+    echo json_encode(['success' => false, 'message' => "Field 'costing' is required"]);
+    exit;
+}
+
 // Prepare data
 $year = intval($input['year']);
 $cluster = $db->escape($input['cluster']);
 $concerned_office_facility = $db->escape($input['concerned_office_facility']);
 $facility_level = $db->escape($input['facility_level']);
 $category = $db->escape($input['category']);
-$type_of_health_facility = isset($input['type_of_health_facility']) ? $db->escape($input['type_of_health_facility']) : null;
-$number_of_units = isset($input['number_of_units']) ? intval($input['number_of_units']) : 0;
-$facilities = isset($input['facilities']) ? $db->escape($input['facilities']) : null;
-$target = isset($input['target']) ? $db->escape($input['target']) : null;
-$costing = isset($input['costing']) ? floatval($input['costing']) : 0.00;
+$type_of_health_facility = $db->escape($input['type_of_health_facility']);
+$number_of_units = intval($input['number_of_units']);
+$facilities = $concerned_office_facility;
+$target = $db->escape($input['target']);
+$costing = floatval($input['costing']);
 $fund_source = $db->escape($input['fund_source']);
-$presence_in_existing_plans = isset($input['presence_in_existing_plans']) ? $db->escape($input['presence_in_existing_plans']) : null;
+$presence_in_existing_plans = $db->escape($input['presence_in_existing_plans']);
 $remarks = isset($input['remarks']) ? $db->escape($input['remarks']) : null;
 
 $sql = "UPDATE hfdp_records SET

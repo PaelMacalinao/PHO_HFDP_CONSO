@@ -14,6 +14,8 @@ $year = isset($_GET['year']) ? intval($_GET['year']) : null;
 $cluster = isset($_GET['cluster']) ? $db->escape($_GET['cluster']) : null;
 $facility_level = isset($_GET['facility_level']) ? $db->escape($_GET['facility_level']) : null;
 $category = isset($_GET['category']) ? $db->escape($_GET['category']) : null;
+$type_of_health_facility = isset($_GET['type_of_health_facility']) ? $db->escape($_GET['type_of_health_facility']) : null;
+$target = isset($_GET['target']) ? $db->escape($_GET['target']) : null;
 $fund_source = isset($_GET['fund_source']) ? $db->escape($_GET['fund_source']) : null;
 $presence_plans = isset($_GET['presence_plans']) ? $db->escape($_GET['presence_plans']) : null;
 
@@ -50,6 +52,18 @@ if ($id !== null && $id > 0) {
     if ($category !== null && $category !== '') {
         $where[] = "category = ?";
         $params[] = $category;
+        $types .= 's';
+    }
+
+    if ($type_of_health_facility !== null && $type_of_health_facility !== '') {
+        $where[] = "type_of_health_facility = ?";
+        $params[] = $type_of_health_facility;
+        $types .= 's';
+    }
+
+    if ($target !== null && $target !== '') {
+        $where[] = "target = ?";
+        $params[] = $target;
         $types .= 's';
     }
 
