@@ -25,17 +25,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 username VARCHAR(50) NOT NULL UNIQUE,
                 password_hash VARCHAR(255) NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                role ENUM('admin', 'staff') DEFAULT 'staff',
+                assigned_facility VARCHAR(255),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                INDEX idx_role (role)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+            // Ensure RBAC columns exist (for existing installations)
+            $columns = $conn->query("SHOW COLUMNS FROM users");
+            $column_names = [];
+            if ($columns) {
+                while ($col = $columns->fetch_assoc()) {
+                    $column_names[] = $col['Field'];
+                }
+                $columns->free();
+            }
+            
+            if (!in_array('role', $column_names)) {
+                $conn->query("ALTER TABLE users ADD COLUMN role ENUM('admin', 'staff') DEFAULT 'staff'");
+                $conn->query("ALTER TABLE users ADD INDEX idx_role (role)");
+            }
+            
+            if (!in_array('assigned_facility', $column_names)) {
+                $conn->query("ALTER TABLE users ADD COLUMN assigned_facility VARCHAR(255)");
+            }
+
+            // Ensure admin user has proper role
+            $conn->query("UPDATE users SET role = 'admin' WHERE username = 'phoadmin'");
 
             // Ensure admin user exists (first-time setup)
             $check = $conn->query("SELECT id FROM users WHERE username = 'phoadmin' LIMIT 1");
             if ($check && $check->num_rows === 0) {
                 $hash = password_hash('phoadmin', PASSWORD_DEFAULT);
-                $stmt = $conn->prepare("INSERT INTO users (username, password_hash) VALUES (?, ?)");
+                $stmt = $conn->prepare("INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)");
+                if (!$stmt) {
+                    throw new Exception("Prepare failed: " . $conn->error);
+                }
                 $adminUser = 'phoadmin';
                 $adminHash = $hash;
-                $stmt->bind_param('ss', $adminUser, $adminHash);
+                $adminRole = 'admin';
+                $stmt->bind_param('sss', $adminUser, $adminHash, $adminRole);
                 $stmt->execute();
                 $stmt->close();
             }
@@ -44,13 +73,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             // Verify credentials (use bind_result for compatibility without mysqlnd)
-            $stmt = $conn->prepare("SELECT id, username, password_hash FROM users WHERE username = ? LIMIT 1");
+            $stmt = $conn->prepare("SELECT id, username, password_hash, role, assigned_facility FROM users WHERE username = ? LIMIT 1");
+            if (!$stmt) {
+                throw new Exception("Prepare failed: " . $conn->error);
+            }
             $stmt->bind_param('s', $username);
             $stmt->execute();
-            $stmt->bind_result($uid, $uname, $upass);
+            $stmt->bind_result($uid, $uname, $upass, $urole, $ufacility);
             $user = null;
             if ($stmt->fetch()) {
-                $user = ['id' => $uid, 'username' => $uname, 'password_hash' => $upass];
+                $user = ['id' => $uid, 'username' => $uname, 'password_hash' => $upass, 'role' => $urole, 'assigned_facility' => $ufacility];
             }
             $stmt->close();
             $db->close();
@@ -58,6 +90,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($user && password_verify($password, $user['password_hash'])) {
                 $_SESSION['user_id'] = (int) $user['id'];
                 $_SESSION['username'] = $user['username'];
+                $_SESSION['role'] = $user['role'] ?? 'staff';
+                $_SESSION['assigned_facility'] = $user['assigned_facility'] ?? null;
                 header('Location: index.php');
                 exit;
             }

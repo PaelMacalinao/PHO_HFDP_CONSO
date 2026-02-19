@@ -3,6 +3,7 @@
  * API Endpoint: Get Records with Filters
  */
 require_once __DIR__ . '/../includes/api_auth.php';
+require_once __DIR__ . '/../includes/auth.php';
 header('Content-Type: application/json');
 require_once __DIR__ . '/../config/database.php';
 
@@ -24,6 +25,16 @@ $presence_plans = isset($_GET['presence_plans']) ? $db->escape($_GET['presence_p
 $where = [];
 $params = [];
 $types = '';
+
+// If staff user, automatically filter by assigned facility
+if (isStaff()) {
+    $assignedFacility = getAssignedFacility();
+    if ($assignedFacility) {
+        $where[] = "concerned_office_facility = ?";
+        $params[] = $assignedFacility;
+        $types .= 's';
+    }
+}
 
 // If ID is provided, fetch only that record
 if ($id !== null && $id > 0) {

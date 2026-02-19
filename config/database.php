@@ -15,9 +15,20 @@ class Database {
     private $conn;
     
     public function __construct() {
+        // First connect without specifying a database
+        $temp_conn = new mysqli(DB_HOST, DB_USER, DB_PASS);
+        if ($temp_conn->connect_error) {
+            throw new Exception("Database connection failed: " . $temp_conn->connect_error);
+        }
+        
+        // Create database if it doesn't exist
+        $temp_conn->query("CREATE DATABASE IF NOT EXISTS " . DB_NAME . " CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+        $temp_conn->close();
+        
+        // Now connect to the specific database
         $this->conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
         if ($this->conn->connect_error) {
-            throw new Exception("Database connection failed: " . $this->conn->connect_error . ". Create the database with database/schema.sql in phpMyAdmin.");
+            throw new Exception("Database connection failed: " . $this->conn->connect_error);
         }
         $this->conn->set_charset("utf8mb4");
     }

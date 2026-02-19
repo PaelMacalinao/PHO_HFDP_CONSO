@@ -33,7 +33,7 @@ requireLogin();
                     <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>
                 </div>
                 <div class="sidebar-admin-info">
-                    <span class="sidebar-admin-role">Admin</span>
+                    <span class="sidebar-admin-role"><?php echo htmlspecialchars(strtoupper($_SESSION['role'] ?? 'staff')); ?></span>
                     <span class="sidebar-admin-name"><?php echo htmlspecialchars($_SESSION['username'] ?? 'phoadmin'); ?></span>
                 </div>
             </div>
@@ -49,10 +49,12 @@ requireLogin();
             </a>
             <div class="sidebar-section">
                 <span class="sidebar-section-title">Settings</span>
+                <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
                 <a href="user_management.php" class="sidebar-link">
                     <span class="sidebar-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg></span>
                     <span class="sidebar-label">Add New User/Staff</span>
                 </a>
+                <?php endif; ?>
             </div>
         </nav>
     </aside>
@@ -85,7 +87,7 @@ requireLogin();
                                 <span class="admin-trigger-icon" aria-hidden="true">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>
                                 </span>
-                                <span class="admin-trigger-label">ADMIN</span>
+                                <span class="admin-trigger-label"><?php echo htmlspecialchars(strtoupper($_SESSION['role'] ?? 'staff')); ?></span>
                             </button>
                             <div class="admin-dropdown" id="admin-dropdown" role="menu" aria-hidden="true">
                                 <div class="admin-dropdown-header">
@@ -93,7 +95,7 @@ requireLogin();
                                         <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>
                                     </span>
                                     <div class="admin-dropdown-info">
-                                        <span class="admin-dropdown-role">ADMIN</span>
+                                        <span class="admin-dropdown-role"><?php echo htmlspecialchars(strtoupper($_SESSION['role'] ?? 'staff')); ?></span>
                                         <span class="admin-dropdown-username"><?php echo htmlspecialchars($_SESSION['username'] ?? 'phoadmin'); ?></span>
                                     </div>
                                 </div>

@@ -38,8 +38,6 @@
 
         // Only the hamburger button toggles the sidebar; header nav links (Dashboard, Add New Record) must not trigger it
         function handleToggleClick(e) {
-            if (e.target.closest('a')) return;
-            if (!toggle.contains(e.target)) return;
             e.preventDefault();
             e.stopPropagation();
             toggleSidebar();

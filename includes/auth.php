@@ -33,3 +33,24 @@ function redirectIfLoggedIn() {
         exit;
     }
 }
+
+/**
+ * Check if current user is an admin
+ */
+function isAdmin() {
+    return isset($_SESSION['role']) && $_SESSION['role'] === 'admin';
+}
+
+/**
+ * Check if current user is staff
+ */
+function isStaff() {
+    return isset($_SESSION['role']) && $_SESSION['role'] === 'staff';
+}
+
+/**
+ * Get assigned facility for current staff user
+ */
+function getAssignedFacility() {
+    return $_SESSION['assigned_facility'] ?? null;
+}
