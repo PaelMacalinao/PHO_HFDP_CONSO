@@ -14,6 +14,13 @@ if (!$conn) {
     exit;
 }
 
+// Ensure municipality column exists (for existing installations)
+$colCheck = $conn->query("SHOW COLUMNS FROM hfdp_records LIKE 'municipality'");
+if ($colCheck && $colCheck->num_rows === 0) {
+    $conn->query("ALTER TABLE hfdp_records ADD COLUMN municipality VARCHAR(255) DEFAULT NULL COMMENT 'Municipality derived from assigned facility' AFTER concerned_office_facility");
+}
+if ($colCheck) $colCheck->free();
+
 // Get JSON input
 $input = json_decode(file_get_contents('php://input'), true);
 if (!is_array($input)) {
@@ -21,7 +28,89 @@ if (!is_array($input)) {
     exit;
 }
 
-// Validate required fields (remarks is optional)
+// ── REPEATER FORMAT (items array) ──
+if (isset($input['items']) && is_array($input['items']) && count($input['items']) > 0) {
+
+    // Validate shared header fields
+    $headerRequired = ['year', 'cluster', 'concerned_office_facility', 'facility_level', 'presence_in_existing_plans'];
+    foreach ($headerRequired as $key) {
+        if (!isset($input[$key]) || trim((string)$input[$key]) === '') {
+            echo json_encode(['success' => false, 'message' => "Field '$key' is required"]);
+            exit;
+        }
+    }
+
+    $year = intval($input['year']);
+    if ($year <= 0) {
+        echo json_encode(['success' => false, 'message' => "Field 'year' is required"]);
+        exit;
+    }
+    $cluster                   = trim($input['cluster']);
+    $concerned_office_facility = trim($input['concerned_office_facility']);
+    $municipality              = trim($input['municipality'] ?? '');
+    $facility_level            = trim($input['facility_level']);
+    $presence_in_existing_plans = trim($input['presence_in_existing_plans']);
+    $facilities                = $concerned_office_facility;
+
+    $sql = "INSERT INTO hfdp_records (
+        year, cluster, concerned_office_facility, municipality, facility_level, category,
+        type_of_health_facility, number_of_units, facilities, costing,
+        fund_source, presence_in_existing_plans
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+    $stmt = $conn->prepare($sql);
+    if (!$stmt) {
+        echo json_encode([
+            'success' => false,
+            'message' => 'Database error: ' . $conn->error . '. Make sure you ran database/schema.sql to create the table.'
+        ]);
+        exit;
+    }
+
+    $insertedCount = 0;
+    $errors = [];
+
+    foreach ($input['items'] as $idx => $item) {
+        $category               = trim($item['category'] ?? '');
+        $type_of_health_facility = trim($item['type_of_health_facility'] ?? '');
+        $number_of_units        = intval($item['number_of_units'] ?? 0);
+        $costing                = floatval(preg_replace('/[^\d.]/', '', $item['costing'] ?? '0'));
+        $fund_source            = trim($item['fund_source'] ?? '');
+
+        if (!$category || !$type_of_health_facility || !$fund_source) {
+            $errors[] = "Item #" . ($idx + 1) . ": missing required fields";
+            continue;
+        }
+
+        $stmt->bind_param(
+            'issssssisdss',
+            $year, $cluster, $concerned_office_facility, $municipality, $facility_level, $category,
+            $type_of_health_facility, $number_of_units, $facilities, $costing,
+            $fund_source, $presence_in_existing_plans
+        );
+
+        if ($stmt->execute()) {
+            $insertedCount++;
+        } else {
+            $errors[] = "Item #" . ($idx + 1) . ": " . $stmt->error;
+        }
+    }
+
+    $stmt->close();
+
+    if ($insertedCount > 0) {
+        $msg = $insertedCount . ' record(s) created successfully';
+        if (count($errors) > 0) $msg .= '. Warnings: ' . implode('; ', $errors);
+        echo json_encode(['success' => true, 'message' => $msg, 'count' => $insertedCount]);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'No records created. ' . implode('; ', $errors)]);
+    }
+
+    $db->close();
+    exit;
+}
+
+// ── LEGACY SINGLE-RECORD FORMAT (backward compatibility) ──
 $requiredKeys = [
     'year',
     'cluster',
@@ -30,7 +119,6 @@ $requiredKeys = [
     'category',
     'type_of_health_facility',
     'number_of_units',
-    'target',
     'costing',
     'fund_source',
     'presence_in_existing_plans'
@@ -54,7 +142,6 @@ $requiredStrings = [
     'facility_level',
     'category',
     'type_of_health_facility',
-    'target',
     'fund_source',
     'presence_in_existing_plans'
 ];
@@ -78,24 +165,23 @@ if (!is_numeric(preg_replace('/[^\d.]/', '', $input['costing']))) {
 
 // Prepare data
 $year = intval($input['year']);
-$cluster = $db->escape($input['cluster']);
-$concerned_office_facility = $db->escape($input['concerned_office_facility']);
-$facility_level = $db->escape($input['facility_level']);
-$category = $db->escape($input['category']);
-$type_of_health_facility = $db->escape($input['type_of_health_facility']);
+$cluster = trim($input['cluster']);
+$concerned_office_facility = trim($input['concerned_office_facility']);
+$municipality = trim($input['municipality'] ?? '');
+$facility_level = trim($input['facility_level']);
+$category = trim($input['category']);
+$type_of_health_facility = trim($input['type_of_health_facility']);
 $number_of_units = intval($input['number_of_units']);
 $facilities = $concerned_office_facility;
-$target = $db->escape($input['target']);
 $costing = floatval(preg_replace('/[^\d.]/', '', $input['costing']));
-$fund_source = $db->escape($input['fund_source']);
-$presence_in_existing_plans = $db->escape($input['presence_in_existing_plans']);
-$remarks = isset($input['remarks']) ? $db->escape($input['remarks']) : null;
+$fund_source = trim($input['fund_source']);
+$presence_in_existing_plans = trim($input['presence_in_existing_plans']);
 
 $sql = "INSERT INTO hfdp_records (
-    year, cluster, concerned_office_facility, facility_level, category,
-    type_of_health_facility, number_of_units, facilities, target, costing,
-    fund_source, presence_in_existing_plans, remarks
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    year, cluster, concerned_office_facility, municipality, facility_level, category,
+    type_of_health_facility, number_of_units, facilities, costing,
+    fund_source, presence_in_existing_plans
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
 $stmt = $conn->prepare($sql);
 if (!$stmt) {
@@ -106,10 +192,10 @@ if (!$stmt) {
     exit;
 }
 $stmt->bind_param(
-    'isssssissdsss',
-    $year, $cluster, $concerned_office_facility, $facility_level, $category,
-    $type_of_health_facility, $number_of_units, $facilities, $target, $costing,
-    $fund_source, $presence_in_existing_plans, $remarks
+    'issssssisdss',
+    $year, $cluster, $concerned_office_facility, $municipality, $facility_level, $category,
+    $type_of_health_facility, $number_of_units, $facilities, $costing,
+    $fund_source, $presence_in_existing_plans
 );
 
 if ($stmt->execute()) {

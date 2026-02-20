@@ -15,7 +15,6 @@ $cluster = isset($_GET['cluster']) ? $db->escape($_GET['cluster']) : null;
 $facility_level = isset($_GET['facility_level']) ? $db->escape($_GET['facility_level']) : null;
 $category = isset($_GET['category']) ? $db->escape($_GET['category']) : null;
 $type_of_health_facility = isset($_GET['type_of_health_facility']) ? $db->escape($_GET['type_of_health_facility']) : null;
-$target = isset($_GET['target']) ? $db->escape($_GET['target']) : null;
 $fund_source = isset($_GET['fund_source']) ? $db->escape($_GET['fund_source']) : null;
 $presence_plans = isset($_GET['presence_plans']) ? $db->escape($_GET['presence_plans']) : null;
 
@@ -48,11 +47,6 @@ if ($type_of_health_facility !== null && $type_of_health_facility !== '') {
     $params[] = $type_of_health_facility;
     $types .= 's';
 }
-if ($target !== null && $target !== '') {
-    $where[] = "target = ?";
-    $params[] = $target;
-    $types .= 's';
-}
 if ($fund_source !== null && $fund_source !== '') {
     $where[] = "fund_source LIKE ?";
     $params[] = '%' . $fund_source . '%';
@@ -65,7 +59,7 @@ if ($presence_plans !== null && $presence_plans !== '') {
 }
 
 $whereClause = !empty($where) ? "WHERE " . implode(" AND ", $where) : "";
-$sql = "SELECT id, year, cluster, concerned_office_facility, facility_level, category, type_of_health_facility, number_of_units, facilities, target, costing, fund_source, presence_in_existing_plans, remarks FROM hfdp_records $whereClause ORDER BY year ASC, concerned_office_facility ASC";
+$sql = "SELECT id, year, cluster, concerned_office_facility, municipality, facility_level, category, type_of_health_facility, number_of_units, facilities, costing, fund_source, presence_in_existing_plans FROM hfdp_records $whereClause ORDER BY year ASC, concerned_office_facility ASC";
 $stmt = $conn->prepare($sql);
 if (!empty($params)) {
     $stmt->bind_param($types, ...$params);
@@ -78,16 +72,15 @@ $headers = [
     'Year',
     'Cluster',
     'Concerned Office / Facility',
+    'Municipality',
     'BHS/PCF/HOSP (Facility Level)',
     'INFRA/EQUIP/HR (Category)',
-    'Type of Health Facility',
+    'Requested Item/Human Resource(HR)',
     'Number of Units',
     'Facilities (Specific Item Description)',
-    'Target',
     'Costing',
     'Fund Source',
-    'Presence in Existing Plans',
-    'Remarks'
+    'Presence in Existing Plans'
 ];
 
 $filename = 'PHO_CONSO_HFDP_Export_' . date('Y-m-d_His') . '.csv';
@@ -108,16 +101,15 @@ while ($row = $result->fetch_assoc()) {
         $row['year'],
         $row['cluster'],
         $row['concerned_office_facility'],
+        $row['municipality'] ?? '',
         $row['facility_level'],
         $row['category'],
         $row['type_of_health_facility'],
         $row['number_of_units'],
         $row['facilities'],
-        $row['target'],
         $row['costing'],
         $row['fund_source'],
-        $row['presence_in_existing_plans'],
-        $row['remarks']
+        $row['presence_in_existing_plans']
     ]);
 }
 

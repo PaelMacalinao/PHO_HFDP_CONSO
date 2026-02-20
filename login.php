@@ -92,6 +92,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['username'] = $user['username'];
                 $_SESSION['role'] = $user['role'] ?? 'staff';
                 $_SESSION['assigned_facility'] = $user['assigned_facility'] ?? null;
+
+                // Derive municipality from assigned facility
+                $facilityMunicipalityMap = [
+                    'LINAPACAN MUNICIPAL HEALTH OFFICE' => 'LINAPACAN',
+                    'CULION MUNICIPAL HEALTH OFFICE' => 'CULION',
+                    'BUSUANGA HEALTH OFFICE' => 'BUSUANGA',
+                    'CORON DISTRICT HOSPITAL' => 'CORON',
+                    'CORON MUNICIPAL HEALTH OFFICE' => 'CORON',
+                    'AGUTAYA MUNICIPAL HEALTH OFFICE' => 'AGUTAYA',
+                    'CUYO DISTRICT HOSPITAL' => 'CUYO',
+                    'CUYO MUNICIPAL HEALTH OFFICE' => 'CUYO',
+                    'MAGSAYSAY MUNICIPAL HEALTH OFFICE' => 'MAGSAYSAY',
+                    'ABORLAN MUNICIPAL HEALTH OFFICE' => 'ABORLAN',
+                    'ABORLAN MEDICARE HOSPITAL' => 'ABORLAN',
+                    'BALABAC DISTRICT HOSPITAL' => 'BALABAC',
+                    'BALABAC MUNICIPAL HEALTH OFFICE' => 'BALABAC',
+                    'BATARAZA DISTRICT HOSPITAL' => 'BATARAZA',
+                    'BATARAZA MUNICIPAL HEALTH OFFICE' => 'BATARAZA',
+                    "BROOKE'S POINT MUNICIPAL HEALTH OFFICE" => "BROOKE'S POINT",
+                    'SOUTHERN PALAWAN PROVINCIAL HOSPITAL' => "BROOKE'S POINT",
+                    'DR. JOSE RIZAL DISTRICT HOSPITAL' => 'RIZAL',
+                    'RIZAL MUNICIPAL HEALTH OFFICE' => 'RIZAL',
+                    'KALAYAAN MUNICIPAL HEALTH OFFICE' => 'KALAYAAN',
+                    'NARRA MUNICIPAL HOSPITAL' => 'NARRA',
+                    'NARRA MUNICIPAL HEALTH OFFICE' => 'NARRA',
+                    'QUEZON MEDICARE HOSPITAL' => 'QUEZON',
+                    'QUEZON MUNICIPAL HEALTH OFFICE' => 'QUEZON',
+                    'SOFRONIO ESPAÑOLA DISTRICT HOSPITAL' => 'SOFRONIO ESPAÑOLA',
+                    'SOFRONIO ESPAÑOLA MUNICIPAL HEALTH OFFICE' => 'SOFRONIO ESPAÑOLA',
+                    'ARACELI MUNICIPAL HEALTH OFFICE' => 'ARACELI',
+                    'ARACELI-DUMARAN DISTRICT HOSPITAL' => 'DUMARAN',
+                    'CAGAYANCILLO MUNICIPAL HEALTH OFFICE' => 'CAGAYANCILLO',
+                    'DUMARAN MUNICIPAL HEALTH OFFICE' => 'DUMARAN',
+                    'FRANCISCO F. PONCE DE LEON HOSPITAL' => 'DUMARAN',
+                    'EL NIDO COMMUNITY HOSPITAL' => 'EL NIDO',
+                    'EL NIDO MUNICIPAL HEALTH OFFICE' => 'EL NIDO',
+                    'NORTHERN PALAWAN PROVINCIAL HOSPITAL' => 'TAYTAY',
+                    'ROXAS MEDICARE HOSPITAL' => 'ROXAS',
+                    'ROXAS MUNICIPAL HEALTH OFFICE' => 'ROXAS',
+                    'SAN VICENTE DISTRICT HOSPITAL' => 'SAN VICENTE',
+                    'SAN VICENTE MUNICIPAL HEALTH OFFICE' => 'SAN VICENTE',
+                    'TAYTAY MUNICIPAL HEALTH OFFICE' => 'TAYTAY',
+                ];
+                $_SESSION['municipality'] = $facilityMunicipalityMap[$user['assigned_facility']] ?? '';
+
                 header('Location: index.php');
                 exit;
             }

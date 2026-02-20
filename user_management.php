@@ -18,6 +18,17 @@ require_once __DIR__ . '/config/database.php';
 $message = '';
 $messageType = '';
 
+// Check for session flash messages (e.g. from delete action)
+if (!empty($_SESSION['success'])) {
+    $message = $_SESSION['success'];
+    $messageType = 'success';
+    unset($_SESSION['success']);
+} elseif (!empty($_SESSION['error'])) {
+    $message = $_SESSION['error'];
+    $messageType = 'error';
+    unset($_SESSION['error']);
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_user'])) {
     $username = trim($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';
@@ -94,6 +105,23 @@ try {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PHO CONSO HFDP - User Management</title>
     <link rel="stylesheet" href="assets/css/style.css">
+    <!-- Select2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <style>
+        .facility-auto-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 10px; }
+        .facility-auto-grid .form-group { margin-bottom: 0; }
+        .facility-auto-grid input[readonly] {
+            background: var(--bg-light, #f4f6f8); color: var(--text, #1a2b1d);
+            border: 1px solid var(--border, #c8d6c8); cursor: default; opacity: 0.85;
+        }
+        .select2-container--default .select2-selection--single {
+            height: 40px; padding: 5px 8px; border: 1px solid var(--border, #c8d6c8);
+            border-radius: 8px; font-size: 0.95rem;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__rendered { line-height: 28px; }
+        .select2-container--default .select2-selection--single .select2-selection__arrow { height: 38px; }
+        @media (max-width: 768px) { .facility-auto-grid { grid-template-columns: 1fr; } }
+    </style>
 </head>
 <body>
     <div id="page-preloader" class="page-preloader" aria-hidden="false">
@@ -148,14 +176,16 @@ try {
                     <button type="button" class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle menu" aria-expanded="false">
                         <span class="hamburger"><span></span><span></span><span></span></span>
                     </button>
-                    <div class="admin-logo-placeholder" aria-hidden="true">
-                        <img src="assets/images/pho-logo.png" alt="" class="admin-logo-img" onerror="this.style.display='none';this.parentElement.classList.add('no-img')">
-                        <span class="admin-logo-fallback">PHO</span>
-                    </div>
-                    <div class="admin-header-title">
-                        <h1>User Management</h1>
-                        <span class="admin-header-subtitle">Settings · Provincial Health Office</span>
-                    </div>
+                    <a href="index.php" class="admin-header-home">
+                        <div class="admin-logo-placeholder" aria-hidden="true">
+                            <img src="assets/images/pho-logo.png" alt="" class="admin-logo-img" onerror="this.style.display='none';this.parentElement.classList.add('no-img')">
+                            <span class="admin-logo-fallback">PHO</span>
+                        </div>
+                        <div class="admin-header-title">
+                            <h1>User Management</h1>
+                            <span class="admin-header-subtitle">Settings · Provincial Health Office</span>
+                        </div>
+                    </a>
                 </div>
                 <div class="admin-header-right">
                     <div class="admin-header-meta">
@@ -209,51 +239,66 @@ try {
                             <option value="staff" <?php echo isset($_POST['role']) && $_POST['role'] === 'staff' ? 'selected' : ''; ?>>Staff</option>
                         </select>
                     </div>
-                    <div class="form-group" id="facilityContainer" style="display: none;">
-                        <label for="assigned_facility">Assign Facility <span class="required">*</span></label>
-                        <select id="assigned_facility" name="assigned_facility" class="form-control">
-                            <option value="" disabled selected>Select Facility</option>
-                            <option value="ABORLAN MEDICARE HOSPITAL" <?php echo isset($_POST['assigned_facility']) && $_POST['assigned_facility'] === 'ABORLAN MEDICARE HOSPITAL' ? 'selected' : ''; ?>>ABORLAN MEDICARE HOSPITAL</option>
-                            <option value="ABORLAN MUNICIPAL HEALTH OFFICE" <?php echo isset($_POST['assigned_facility']) && $_POST['assigned_facility'] === 'ABORLAN MUNICIPAL HEALTH OFFICE' ? 'selected' : ''; ?>>ABORLAN MUNICIPAL HEALTH OFFICE</option>
-                            <option value="ARACELI-DUMARAN DISTRICT HOSPITAL" <?php echo isset($_POST['assigned_facility']) && $_POST['assigned_facility'] === 'ARACELI-DUMARAN DISTRICT HOSPITAL' ? 'selected' : ''; ?>>ARACELI-DUMARAN DISTRICT HOSPITAL</option>
-                            <option value="BALABAC DISTRICT HOSPITAL" <?php echo isset($_POST['assigned_facility']) && $_POST['assigned_facility'] === 'BALABAC DISTRICT HOSPITAL' ? 'selected' : ''; ?>>BALABAC DISTRICT HOSPITAL</option>
-                            <option value="BALABAC MUNICIPAL HEALTH OFFICE" <?php echo isset($_POST['assigned_facility']) && $_POST['assigned_facility'] === 'BALABAC MUNICIPAL HEALTH OFFICE' ? 'selected' : ''; ?>>BALABAC MUNICIPAL HEALTH OFFICE</option>
-                            <option value="BATARAZA DISTRICT HOSPITAL" <?php echo isset($_POST['assigned_facility']) && $_POST['assigned_facility'] === 'BATARAZA DISTRICT HOSPITAL' ? 'selected' : ''; ?>>BATARAZA DISTRICT HOSPITAL</option>
-                            <option value="BATARAZA MUNICIPAL HEALTH OFFICE" <?php echo isset($_POST['assigned_facility']) && $_POST['assigned_facility'] === 'BATARAZA MUNICIPAL HEALTH OFFICE' ? 'selected' : ''; ?>>BATARAZA MUNICIPAL HEALTH OFFICE</option>
-                            <option value="BATARAZA MUNICIPAL HOSPITAL" <?php echo isset($_POST['assigned_facility']) && $_POST['assigned_facility'] === 'BATARAZA MUNICIPAL HOSPITAL' ? 'selected' : ''; ?>>BATARAZA MUNICIPAL HOSPITAL</option>
-                            <option value="BROOKES POINT MUNICIPAL HEALTH OFFICE" <?php echo isset($_POST['assigned_facility']) && $_POST['assigned_facility'] === 'BROOKES POINT MUNICIPAL HEALTH OFFICE' ? 'selected' : ''; ?>>BROOKES POINT MUNICIPAL HEALTH OFFICE</option>
-                            <option value="BROOKES POINT MUNICIPAL HOSPITAL" <?php echo isset($_POST['assigned_facility']) && $_POST['assigned_facility'] === 'BROOKES POINT MUNICIPAL HOSPITAL' ? 'selected' : ''; ?>>BROOKES POINT MUNICIPAL HOSPITAL</option>
-                            <option value="BUSUANGA HEALTH OFFICE" <?php echo isset($_POST['assigned_facility']) && $_POST['assigned_facility'] === 'BUSUANGA HEALTH OFFICE' ? 'selected' : ''; ?>>BUSUANGA HEALTH OFFICE</option>
-                            <option value="CORON DISTRICT HOSPITAL" <?php echo isset($_POST['assigned_facility']) && $_POST['assigned_facility'] === 'CORON DISTRICT HOSPITAL' ? 'selected' : ''; ?>>CORON DISTRICT HOSPITAL</option>
-                            <option value="CORON MUNICIPAL HEALTH OFFICE" <?php echo isset($_POST['assigned_facility']) && $_POST['assigned_facility'] === 'CORON MUNICIPAL HEALTH OFFICE' ? 'selected' : ''; ?>>CORON MUNICIPAL HEALTH OFFICE</option>
-                            <option value="CULION MUNICIPAL HEALTH OFFICE" <?php echo isset($_POST['assigned_facility']) && $_POST['assigned_facility'] === 'CULION MUNICIPAL HEALTH OFFICE' ? 'selected' : ''; ?>>CULION MUNICIPAL HEALTH OFFICE</option>
-                            <option value="CUYO DISTRICT HOSPITAL" <?php echo isset($_POST['assigned_facility']) && $_POST['assigned_facility'] === 'CUYO DISTRICT HOSPITAL' ? 'selected' : ''; ?>>CUYO DISTRICT HOSPITAL</option>
-                            <option value="DR JOSE RIZAL DISTRICT HOSPITAL" <?php echo isset($_POST['assigned_facility']) && $_POST['assigned_facility'] === 'DR JOSE RIZAL DISTRICT HOSPITAL' ? 'selected' : ''; ?>>DR JOSE RIZAL DISTRICT HOSPITAL</option>
-                            <option value="EL NIDO COMMUNITY HOSPITAL" <?php echo isset($_POST['assigned_facility']) && $_POST['assigned_facility'] === 'EL NIDO COMMUNITY HOSPITAL' ? 'selected' : ''; ?>>EL NIDO COMMUNITY HOSPITAL</option>
-                            <option value="KALAYAAN MUNICIPAL HEALTH OFFICE" <?php echo isset($_POST['assigned_facility']) && $_POST['assigned_facility'] === 'KALAYAAN MUNICIPAL HEALTH OFFICE' ? 'selected' : ''; ?>>KALAYAAN MUNICIPAL HEALTH OFFICE</option>
-                            <option value="LINAPACAN MUNICIPAL HEALTH OFFICE" <?php echo isset($_POST['assigned_facility']) && $_POST['assigned_facility'] === 'LINAPACAN MUNICIPAL HEALTH OFFICE' ? 'selected' : ''; ?>>LINAPACAN MUNICIPAL HEALTH OFFICE</option>
-                            <option value="MUNICIPALITY OF AGUTAYA" <?php echo isset($_POST['assigned_facility']) && $_POST['assigned_facility'] === 'MUNICIPALITY OF AGUTAYA' ? 'selected' : ''; ?>>MUNICIPALITY OF AGUTAYA</option>
-                            <option value="MUNICIPALITY OF ARACELI" <?php echo isset($_POST['assigned_facility']) && $_POST['assigned_facility'] === 'MUNICIPALITY OF ARACELI' ? 'selected' : ''; ?>>MUNICIPALITY OF ARACELI</option>
-                            <option value="MUNICIPALITY OF CAGAYANCILLO" <?php echo isset($_POST['assigned_facility']) && $_POST['assigned_facility'] === 'MUNICIPALITY OF CAGAYANCILLO' ? 'selected' : ''; ?>>MUNICIPALITY OF CAGAYANCILLO</option>
-                            <option value="MUNICIPALITY OF DUMARAN" <?php echo isset($_POST['assigned_facility']) && $_POST['assigned_facility'] === 'MUNICIPALITY OF DUMARAN' ? 'selected' : ''; ?>>MUNICIPALITY OF DUMARAN</option>
-                            <option value="MUNICIPALITY OF EL NIDO" <?php echo isset($_POST['assigned_facility']) && $_POST['assigned_facility'] === 'MUNICIPALITY OF EL NIDO' ? 'selected' : ''; ?>>MUNICIPALITY OF EL NIDO</option>
-                            <option value="MUNICIPALITY OF MAGSAYSAY" <?php echo isset($_POST['assigned_facility']) && $_POST['assigned_facility'] === 'MUNICIPALITY OF MAGSAYSAY' ? 'selected' : ''; ?>>MUNICIPALITY OF MAGSAYSAY</option>
-                            <option value="MUNICIPALITY OF ROXAS" <?php echo isset($_POST['assigned_facility']) && $_POST['assigned_facility'] === 'MUNICIPALITY OF ROXAS' ? 'selected' : ''; ?>>MUNICIPALITY OF ROXAS</option>
-                            <option value="MUNICIPALITY OF SAN VICENTE" <?php echo isset($_POST['assigned_facility']) && $_POST['assigned_facility'] === 'MUNICIPALITY OF SAN VICENTE' ? 'selected' : ''; ?>>MUNICIPALITY OF SAN VICENTE</option>
-                            <option value="MUNICIPALITY OF TAYTAY" <?php echo isset($_POST['assigned_facility']) && $_POST['assigned_facility'] === 'MUNICIPALITY OF TAYTAY' ? 'selected' : ''; ?>>MUNICIPALITY OF TAYTAY</option>
-                            <option value="NARRA MUNICIPAL HEALTH OFFICE" <?php echo isset($_POST['assigned_facility']) && $_POST['assigned_facility'] === 'NARRA MUNICIPAL HEALTH OFFICE' ? 'selected' : ''; ?>>NARRA MUNICIPAL HEALTH OFFICE</option>
-                            <option value="NARRA MUNICIPAL HOSPITAL" <?php echo isset($_POST['assigned_facility']) && $_POST['assigned_facility'] === 'NARRA MUNICIPAL HOSPITAL' ? 'selected' : ''; ?>>NARRA MUNICIPAL HOSPITAL</option>
-                            <option value="NORTHERN PALAWAN PROVINCIAL HOSPITAL" <?php echo isset($_POST['assigned_facility']) && $_POST['assigned_facility'] === 'NORTHERN PALAWAN PROVINCIAL HOSPITAL' ? 'selected' : ''; ?>>NORTHERN PALAWAN PROVINCIAL HOSPITAL</option>
-                            <option value="QUEZON MEDICARE HOSPITAL" <?php echo isset($_POST['assigned_facility']) && $_POST['assigned_facility'] === 'QUEZON MEDICARE HOSPITAL' ? 'selected' : ''; ?>>QUEZON MEDICARE HOSPITAL</option>
-                            <option value="QUEZON MUNICIPAL HEALTH OFFICE" <?php echo isset($_POST['assigned_facility']) && $_POST['assigned_facility'] === 'QUEZON MUNICIPAL HEALTH OFFICE' ? 'selected' : ''; ?>>QUEZON MUNICIPAL HEALTH OFFICE</option>
-                            <option value="RIZAL DISTRICT HOSPITAL" <?php echo isset($_POST['assigned_facility']) && $_POST['assigned_facility'] === 'RIZAL DISTRICT HOSPITAL' ? 'selected' : ''; ?>>RIZAL DISTRICT HOSPITAL</option>
-                            <option value="RIZAL MUNICIPAL HEALTH OFFICE" <?php echo isset($_POST['assigned_facility']) && $_POST['assigned_facility'] === 'RIZAL MUNICIPAL HEALTH OFFICE' ? 'selected' : ''; ?>>RIZAL MUNICIPAL HEALTH OFFICE</option>
-                            <option value="ROXAS MEDICARE HOSPITAL" <?php echo isset($_POST['assigned_facility']) && $_POST['assigned_facility'] === 'ROXAS MEDICARE HOSPITAL' ? 'selected' : ''; ?>>ROXAS MEDICARE HOSPITAL</option>
-                            <option value="SAN VICENTE DISTRICT HOSPITAL" <?php echo isset($_POST['assigned_facility']) && $_POST['assigned_facility'] === 'SAN VICENTE DISTRICT HOSPITAL' ? 'selected' : ''; ?>>SAN VICENTE DISTRICT HOSPITAL</option>
-                            <option value="SOFRONIO ESPAÑOLA DISTRICT HOSPITAL" <?php echo isset($_POST['assigned_facility']) && $_POST['assigned_facility'] === 'SOFRONIO ESPAÑOLA DISTRICT HOSPITAL' ? 'selected' : ''; ?>>SOFRONIO ESPAÑOLA DISTRICT HOSPITAL</option>
-                            <option value="SOFRONIO ESPAÑOLA MUNICIPAL HEALTH OFFICE" <?php echo isset($_POST['assigned_facility']) && $_POST['assigned_facility'] === 'SOFRONIO ESPAÑOLA MUNICIPAL HEALTH OFFICE' ? 'selected' : ''; ?>>SOFRONIO ESPAÑOLA MUNICIPAL HEALTH OFFICE</option>
-                            <option value="SOUTHERN PALAWAN PROVINCIAL HOSPITAL" <?php echo isset($_POST['assigned_facility']) && $_POST['assigned_facility'] === 'SOUTHERN PALAWAN PROVINCIAL HOSPITAL' ? 'selected' : ''; ?>>SOUTHERN PALAWAN PROVINCIAL HOSPITAL</option>
-                        </select>
+                    <div id="facilityContainer" style="display: none;">
+                        <div class="form-group">
+                            <label for="assigned_facility">Assign Facility <span class="required">*</span></label>
+                            <select id="assigned_facility" name="assigned_facility" class="form-control" style="width:100%">
+                                <option value="">Select Facility</option>
+                                <option value="ABORLAN MEDICARE HOSPITAL">ABORLAN MEDICARE HOSPITAL</option>
+                                <option value="ABORLAN MUNICIPAL HEALTH OFFICE">ABORLAN MUNICIPAL HEALTH OFFICE</option>
+                                <option value="AGUTAYA MUNICIPAL HEALTH OFFICE">AGUTAYA MUNICIPAL HEALTH OFFICE</option>
+                                <option value="ARACELI MUNICIPAL HEALTH OFFICE">ARACELI MUNICIPAL HEALTH OFFICE</option>
+                                <option value="ARACELI-DUMARAN DISTRICT HOSPITAL">ARACELI-DUMARAN DISTRICT HOSPITAL</option>
+                                <option value="BALABAC DISTRICT HOSPITAL">BALABAC DISTRICT HOSPITAL</option>
+                                <option value="BALABAC MUNICIPAL HEALTH OFFICE">BALABAC MUNICIPAL HEALTH OFFICE</option>
+                                <option value="BATARAZA DISTRICT HOSPITAL">BATARAZA DISTRICT HOSPITAL</option>
+                                <option value="BATARAZA MUNICIPAL HEALTH OFFICE">BATARAZA MUNICIPAL HEALTH OFFICE</option>
+                                <option value="BROOKE'S POINT MUNICIPAL HEALTH OFFICE">BROOKE'S POINT MUNICIPAL HEALTH OFFICE</option>
+                                <option value="BUSUANGA HEALTH OFFICE">BUSUANGA HEALTH OFFICE</option>
+                                <option value="CAGAYANCILLO MUNICIPAL HEALTH OFFICE">CAGAYANCILLO MUNICIPAL HEALTH OFFICE</option>
+                                <option value="CORON DISTRICT HOSPITAL">CORON DISTRICT HOSPITAL</option>
+                                <option value="CORON MUNICIPAL HEALTH OFFICE">CORON MUNICIPAL HEALTH OFFICE</option>
+                                <option value="CULION MUNICIPAL HEALTH OFFICE">CULION MUNICIPAL HEALTH OFFICE</option>
+                                <option value="CUYO DISTRICT HOSPITAL">CUYO DISTRICT HOSPITAL</option>
+                                <option value="CUYO MUNICIPAL HEALTH OFFICE">CUYO MUNICIPAL HEALTH OFFICE</option>
+                                <option value="DR. JOSE RIZAL DISTRICT HOSPITAL">DR. JOSE RIZAL DISTRICT HOSPITAL</option>
+                                <option value="DUMARAN MUNICIPAL HEALTH OFFICE">DUMARAN MUNICIPAL HEALTH OFFICE</option>
+                                <option value="EL NIDO COMMUNITY HOSPITAL">EL NIDO COMMUNITY HOSPITAL</option>
+                                <option value="EL NIDO MUNICIPAL HEALTH OFFICE">EL NIDO MUNICIPAL HEALTH OFFICE</option>
+                                <option value="FRANCISCO F. PONCE DE LEON HOSPITAL">FRANCISCO F. PONCE DE LEON HOSPITAL</option>
+                                <option value="KALAYAAN MUNICIPAL HEALTH OFFICE">KALAYAAN MUNICIPAL HEALTH OFFICE</option>
+                                <option value="LINAPACAN MUNICIPAL HEALTH OFFICE">LINAPACAN MUNICIPAL HEALTH OFFICE</option>
+                                <option value="MAGSAYSAY MUNICIPAL HEALTH OFFICE">MAGSAYSAY MUNICIPAL HEALTH OFFICE</option>
+                                <option value="NARRA MUNICIPAL HEALTH OFFICE">NARRA MUNICIPAL HEALTH OFFICE</option>
+                                <option value="NARRA MUNICIPAL HOSPITAL">NARRA MUNICIPAL HOSPITAL</option>
+                                <option value="NORTHERN PALAWAN PROVINCIAL HOSPITAL">NORTHERN PALAWAN PROVINCIAL HOSPITAL</option>
+                                <option value="QUEZON MEDICARE HOSPITAL">QUEZON MEDICARE HOSPITAL</option>
+                                <option value="QUEZON MUNICIPAL HEALTH OFFICE">QUEZON MUNICIPAL HEALTH OFFICE</option>
+                                <option value="RIZAL MUNICIPAL HEALTH OFFICE">RIZAL MUNICIPAL HEALTH OFFICE</option>
+                                <option value="ROXAS MEDICARE HOSPITAL">ROXAS MEDICARE HOSPITAL</option>
+                                <option value="ROXAS MUNICIPAL HEALTH OFFICE">ROXAS MUNICIPAL HEALTH OFFICE</option>
+                                <option value="SAN VICENTE DISTRICT HOSPITAL">SAN VICENTE DISTRICT HOSPITAL</option>
+                                <option value="SAN VICENTE MUNICIPAL HEALTH OFFICE">SAN VICENTE MUNICIPAL HEALTH OFFICE</option>
+                                <option value="SOFRONIO ESPAÑOLA DISTRICT HOSPITAL">SOFRONIO ESPAÑOLA DISTRICT HOSPITAL</option>
+                                <option value="SOFRONIO ESPAÑOLA MUNICIPAL HEALTH OFFICE">SOFRONIO ESPAÑOLA MUNICIPAL HEALTH OFFICE</option>
+                                <option value="SOUTHERN PALAWAN PROVINCIAL HOSPITAL">SOUTHERN PALAWAN PROVINCIAL HOSPITAL</option>
+                                <option value="TAYTAY MUNICIPAL HEALTH OFFICE">TAYTAY MUNICIPAL HEALTH OFFICE</option>
+                            </select>
+                        </div>
+                        <div class="facility-auto-grid">
+                            <div class="form-group">
+                                <label for="autoMunicipality">Municipality</label>
+                                <input type="text" id="autoMunicipality" readonly placeholder="—">
+                            </div>
+                            <div class="form-group">
+                                <label for="autoFacilityType">Type</label>
+                                <input type="text" id="autoFacilityType" readonly placeholder="—">
+                            </div>
+                            <div class="form-group">
+                                <label for="autoCluster">Health Cluster</label>
+                                <input type="text" id="autoCluster" readonly placeholder="—">
+                            </div>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="password">Password <span class="required">*</span></label>
@@ -282,11 +327,12 @@ try {
                             <th>Role</th>
                             <th>Assigned Facility</th>
                             <th>Created</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php if (empty($users)): ?>
-                            <tr><td colspan="5" class="no-data">No users yet.</td></tr>
+                            <tr><td colspan="6" class="no-data">No users yet.</td></tr>
                         <?php else: ?>
                             <?php foreach ($users as $u): ?>
                                 <tr>
@@ -295,6 +341,19 @@ try {
                                     <td><?php echo htmlspecialchars(ucfirst($u['role'])); ?></td>
                                     <td><?php echo htmlspecialchars($u['assigned_facility'] ?? '-'); ?></td>
                                     <td><?php echo htmlspecialchars($u['created_at'] ?? '-'); ?></td>
+                                    <td>
+                                        <?php if (strtolower($u['role']) === 'staff'): ?>
+                                        <form method="POST" action="api/delete_user.php" class="inline-form" onsubmit="return confirmDeleteUser(this);">
+                                            <input type="hidden" name="user_id" value="<?php echo (int)$u['id']; ?>">
+                                            <button type="submit" class="btn btn-danger btn-sm" title="Delete user">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                                                Delete
+                                            </button>
+                                        </form>
+                                        <?php else: ?>
+                                        <span class="text-muted">—</span>
+                                        <?php endif; ?>
+                                    </td>
                                 </tr>
                             <?php endforeach; ?>
                         <?php endif; ?>
@@ -309,24 +368,119 @@ try {
     <script src="assets/js/admin-menu.js"></script>
     <script src="assets/js/sidebar.js"></script>
     <script src="assets/js/preloader.js"></script>
+    <!-- jQuery + Select2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
-        function toggleFacility() {
-            var role = document.getElementById("role").value;
-            var container = document.getElementById("facilityContainer");
-            var field = document.getElementById("assigned_facility");
+        /* ═══════════════════════════════════════════════════════════════
+         *  Facility Database – extracted from HFDP Fields FACILITY.csv
+         * ═══════════════════════════════════════════════════════════════ */
+        var facilityDatabase = {
+            // ── BCCL ──
+            'LINAPACAN MUNICIPAL HEALTH OFFICE':        { municipality: 'LINAPACAN',        type: 'MHO',      cluster: 'BCCL' },
+            'CULION MUNICIPAL HEALTH OFFICE':           { municipality: 'CULION',            type: 'MHO',      cluster: 'BCCL' },
+            'BUSUANGA HEALTH OFFICE':                   { municipality: 'BUSUANGA',          type: 'MHO',      cluster: 'BCCL' },
+            'CORON DISTRICT HOSPITAL':                  { municipality: 'CORON',             type: 'HOSPITAL', cluster: 'BCCL' },
+            'CORON MUNICIPAL HEALTH OFFICE':            { municipality: 'CORON',             type: 'MHO',      cluster: 'BCCL' },
+            // ── CAM ──
+            'AGUTAYA MUNICIPAL HEALTH OFFICE':          { municipality: 'AGUTAYA',           type: 'MHO',      cluster: 'CAM' },
+            'CUYO DISTRICT HOSPITAL':                   { municipality: 'CUYO',              type: 'HOSPITAL', cluster: 'CAM' },
+            'CUYO MUNICIPAL HEALTH OFFICE':             { municipality: 'CUYO',              type: 'MHO',      cluster: 'CAM' },
+            'MAGSAYSAY MUNICIPAL HEALTH OFFICE':        { municipality: 'MAGSAYSAY',         type: 'MHO',      cluster: 'CAM' },
+            // ── NABBrRBEQ-K ──
+            'ABORLAN MUNICIPAL HEALTH OFFICE':          { municipality: 'ABORLAN',           type: 'MHO',      cluster: 'NABBrRBEQ-K' },
+            'ABORLAN MEDICARE HOSPITAL':                { municipality: 'ABORLAN',           type: 'HOSPITAL', cluster: 'NABBrRBEQ-K' },
+            'BALABAC DISTRICT HOSPITAL':                { municipality: 'BALABAC',           type: 'HOSPITAL', cluster: 'NABBrRBEQ-K' },
+            'BALABAC MUNICIPAL HEALTH OFFICE':          { municipality: 'BALABAC',           type: 'MHO',      cluster: 'NABBrRBEQ-K' },
+            'BATARAZA DISTRICT HOSPITAL':               { municipality: 'BATARAZA',          type: 'HOSPITAL', cluster: 'NABBrRBEQ-K' },
+            'BATARAZA MUNICIPAL HEALTH OFFICE':         { municipality: 'BATARAZA',          type: 'MHO',      cluster: 'NABBrRBEQ-K' },
+            'BROOKE\'S POINT MUNICIPAL HEALTH OFFICE':  { municipality: 'BROOKE\'S POINT',   type: 'MHO',      cluster: 'NABBrRBEQ-K' },
+            'SOUTHERN PALAWAN PROVINCIAL HOSPITAL':     { municipality: 'BROOKE\'S POINT',   type: 'HOSPITAL', cluster: 'NABBrRBEQ-K' },
+            'DR. JOSE RIZAL DISTRICT HOSPITAL':         { municipality: 'RIZAL',             type: 'HOSPITAL', cluster: 'NABBrRBEQ-K' },
+            'RIZAL MUNICIPAL HEALTH OFFICE':            { municipality: 'RIZAL',             type: 'MHO',      cluster: 'NABBrRBEQ-K' },
+            'KALAYAAN MUNICIPAL HEALTH OFFICE':         { municipality: 'KALAYAAN',          type: 'MHO',      cluster: 'NABBrRBEQ-K' },
+            'NARRA MUNICIPAL HOSPITAL':                 { municipality: 'NARRA',             type: 'HOSPITAL', cluster: 'NABBrRBEQ-K' },
+            'NARRA MUNICIPAL HEALTH OFFICE':            { municipality: 'NARRA',             type: 'MHO',      cluster: 'NABBrRBEQ-K' },
+            'QUEZON MEDICARE HOSPITAL':                 { municipality: 'QUEZON',            type: 'HOSPITAL', cluster: 'NABBrRBEQ-K' },
+            'QUEZON MUNICIPAL HEALTH OFFICE':           { municipality: 'QUEZON',            type: 'MHO',      cluster: 'NABBrRBEQ-K' },
+            'SOFRONIO ESPAÑOLA DISTRICT HOSPITAL':      { municipality: 'SOFRONIO ESPAÑOLA', type: 'HOSPITAL', cluster: 'NABBrRBEQ-K' },
+            'SOFRONIO ESPAÑOLA MUNICIPAL HEALTH OFFICE':{ municipality: 'SOFRONIO ESPAÑOLA', type: 'MHO',      cluster: 'NABBrRBEQ-K' },
+            // ── REDCATS ──
+            'ARACELI MUNICIPAL HEALTH OFFICE':          { municipality: 'ARACELI',           type: 'MHO',      cluster: 'REDCATS' },
+            'ARACELI-DUMARAN DISTRICT HOSPITAL':        { municipality: 'DUMARAN',           type: 'HOSPITAL', cluster: 'REDCATS' },
+            'CAGAYANCILLO MUNICIPAL HEALTH OFFICE':     { municipality: 'CAGAYANCILLO',      type: 'MHO',      cluster: 'REDCATS' },
+            'DUMARAN MUNICIPAL HEALTH OFFICE':          { municipality: 'DUMARAN',           type: 'MHO',      cluster: 'REDCATS' },
+            'FRANCISCO F. PONCE DE LEON HOSPITAL':      { municipality: 'DUMARAN',           type: 'HOSPITAL', cluster: 'REDCATS' },
+            'EL NIDO COMMUNITY HOSPITAL':               { municipality: 'EL NIDO',           type: 'HOSPITAL', cluster: 'REDCATS' },
+            'EL NIDO MUNICIPAL HEALTH OFFICE':          { municipality: 'EL NIDO',           type: 'MHO',      cluster: 'REDCATS' },
+            'NORTHERN PALAWAN PROVINCIAL HOSPITAL':     { municipality: 'TAYTAY',            type: 'HOSPITAL', cluster: 'REDCATS' },
+            'ROXAS MEDICARE HOSPITAL':                  { municipality: 'ROXAS',             type: 'HOSPITAL', cluster: 'REDCATS' },
+            'ROXAS MUNICIPAL HEALTH OFFICE':            { municipality: 'ROXAS',             type: 'MHO',      cluster: 'REDCATS' },
+            'SAN VICENTE DISTRICT HOSPITAL':            { municipality: 'SAN VICENTE',       type: 'HOSPITAL', cluster: 'REDCATS' },
+            'SAN VICENTE MUNICIPAL HEALTH OFFICE':      { municipality: 'SAN VICENTE',       type: 'MHO',      cluster: 'REDCATS' },
+            'TAYTAY MUNICIPAL HEALTH OFFICE':           { municipality: 'TAYTAY',            type: 'MHO',      cluster: 'REDCATS' }
+        };
 
-            if (role === "staff") {
-                container.style.display = "block"; // Show
-                field.setAttribute("required", "required"); // Required pag staff
+        /* ═══ Toggle facility section based on role ═══ */
+        function toggleFacility() {
+            var role = document.getElementById('role').value;
+            var container = document.getElementById('facilityContainer');
+            var field = document.getElementById('assigned_facility');
+
+            if (role === 'staff') {
+                container.style.display = 'block';
+                field.setAttribute('required', 'required');
             } else {
-                container.style.display = "none"; // Hide
-                field.removeAttribute("required"); // Not required pag admin
-                field.value = ""; // Clear value
+                container.style.display = 'none';
+                field.removeAttribute('required');
+                // Clear Select2 + auto fields
+                if ($.fn.select2 && $('#assigned_facility').data('select2')) {
+                    $('#assigned_facility').val('').trigger('change');
+                }
+                document.getElementById('autoMunicipality').value = '';
+                document.getElementById('autoFacilityType').value = '';
+                document.getElementById('autoCluster').value = '';
             }
         }
 
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', toggleFacility);
+        /* ═══ Confirm delete ═══ */
+        function confirmDeleteUser(form) {
+            return confirm('Are you sure you want to delete this user?');
+        }
+
+        /* ═══ jQuery: Select2 init + auto-populate ═══ */
+        $(document).ready(function() {
+            // Initialize Select2 on the facility dropdown
+            $('#assigned_facility').select2({
+                placeholder: 'Search or select a facility...',
+                allowClear: true,
+                width: '100%'
+            });
+
+            // Auto-populate on change
+            $('#assigned_facility').on('change', function() {
+                var selected = $(this).val();
+                var info = facilityDatabase[selected];
+                if (info) {
+                    $('#autoMunicipality').val(info.municipality);
+                    $('#autoFacilityType').val(info.type);
+                    $('#autoCluster').val(info.cluster);
+                } else {
+                    $('#autoMunicipality').val('');
+                    $('#autoFacilityType').val('');
+                    $('#autoCluster').val('');
+                }
+            });
+
+            // If a value was already selected (e.g. POST reload), trigger change
+            var preselected = '<?php echo addslashes($_POST['assigned_facility'] ?? ''); ?>';
+            if (preselected) {
+                $('#assigned_facility').val(preselected).trigger('change');
+            }
+
+            // Init role toggle on page load
+            toggleFacility();
+        });
     </script>
 </body>
 </html>

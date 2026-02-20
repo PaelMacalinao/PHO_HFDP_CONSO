@@ -70,14 +70,16 @@ $assignedFacility = $_SESSION['assigned_facility'] ?? '';
                     <button type="button" class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle menu" aria-expanded="false">
                         <span class="hamburger"><span></span><span></span><span></span></span>
                     </button>
-                    <div class="admin-logo-placeholder" aria-hidden="true">
-                        <img src="assets/images/pho-logo.png" alt="" class="admin-logo-img" onerror="this.style.display='none';this.parentElement.classList.add('no-img')">
-                        <span class="admin-logo-fallback">PHO</span>
-                    </div>
-                    <div class="admin-header-title">
-                        <h1>PHO CONSO HFDP Dashboard</h1>
-                        <span class="admin-header-subtitle">Provincial Health Office · Province of Palawan</span>
-                    </div>
+                    <a href="index.php" class="admin-header-home">
+                        <div class="admin-logo-placeholder" aria-hidden="true">
+                            <img src="assets/images/pho-logo.png" alt="" class="admin-logo-img" onerror="this.style.display='none';this.parentElement.classList.add('no-img')">
+                            <span class="admin-logo-fallback">PHO</span>
+                        </div>
+                        <div class="admin-header-title">
+                            <h1>PHO CONSO HFDP Dashboard</h1>
+                            <span class="admin-header-subtitle">Provincial Health Office · Province of Palawan</span>
+                        </div>
+                    </a>
                 </div>
                 <div class="admin-header-right">
                     <div class="admin-header-meta">
@@ -177,12 +179,11 @@ $assignedFacility = $_SESSION['assigned_facility'] ?? '';
                                 <option value="INFRASTRUCTURE">INFRASTRUCTURE</option>
                                 <option value="EQUIPMENT">EQUIPMENT</option>
                                 <option value="HUMAN RESOURCE">HUMAN RESOURCE</option>
-                                <option value="TRANSPORTATION">TRANSPORTATION</option>
                             </select>
                         </div>
 
                         <div class="filter-group">
-                            <label for="filter-type-of-health-facility">Type of Health Facility</label>
+                            <label for="filter-type-of-health-facility">Requested Item/Human Resource(HR)</label>
                             <select id="filter-type-of-health-facility">
                                 <option value="">All Types</option>
                                 <optgroup label="A–C">
@@ -430,12 +431,7 @@ $assignedFacility = $_SESSION['assigned_facility'] ?? '';
                             </select>
                         </div>
 
-                        <div class="filter-group">
-                            <label for="filter-target">Target</label>
-                            <select id="filter-target">
-                                <option value="">All Targets</option>
-                            </select>
-                        </div>
+
                     </div>
                 </div>
             </div>
@@ -463,21 +459,20 @@ $assignedFacility = $_SESSION['assigned_facility'] ?? '';
                             <th>Year</th>
                             <th>Cluster</th>
                             <th>Concerned Office/Facility</th>
+                            <th>Municipality</th>
                             <th>Facility Level</th>
                             <th>Category</th>
-                            <th>Type of Health Facility</th>
+                            <th>Requested Item/Human Resource(HR)</th>
                             <th>Number of Units</th>
-                            <th>Target</th>
                             <th>Costing</th>
                             <th>Fund Source</th>
                             <th>Presence in Existing Plans</th>
-                            <th>Remarks</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="records-tbody">
                         <tr>
-                            <td colspan="13" class="no-data">Loading data...</td>
+                            <td colspan="12" class="no-data">Loading data...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -495,21 +490,12 @@ $assignedFacility = $_SESSION['assigned_facility'] ?? '';
         </div>
     </div>
 
-    <script src="assets/js/target-options.js"></script>
-    <script src="assets/js/app.js"></script>
+    <script src="assets/js/app.js?v=<?php echo time(); ?>"></script>
     <script src="assets/js/clock.js"></script>
     <script src="assets/js/admin-menu.js"></script>
     <script src="assets/js/sidebar.js"></script>
     <script src="assets/js/preloader.js"></script>
     <script src="assets/js/rbac.js"></script>
-    <script>
-        // Populate Target filter dropdown on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            const targetFilter = document.getElementById('filter-target');
-            if (targetFilter) {
-                targetFilter.innerHTML = generateTargetOptions('');
-            }
-        });
-    </script>
+
 </body>
 </html>

@@ -25,48 +25,98 @@ function handleFormSubmit(e) {
     if (submitBtn.disabled) return;
     submitBtn.disabled = true;
 
-    const formData = {
-        year: document.getElementById('year').value,
-        cluster: document.getElementById('cluster').value,
-        concerned_office_facility: document.getElementById('concerned_office_facility').value,
-        facility_level: document.getElementById('facility_level').value,
-        category: document.getElementById('category').value,
-        type_of_health_facility: document.getElementById('type_of_health_facility').value,
-        number_of_units: document.getElementById('number_of_units').value,
-        target: document.getElementById('target').value,
-        costing: formatCostingForDB(document.getElementById('costing').value),
-        fund_source: document.getElementById('fund_source').value,
-        presence_in_existing_plans: document.getElementById('presence_in_existing_plans').value,
-        remarks: document.getElementById('remarks').value
+    /**
+     * Helper: resolve the effective value of a field.
+     */
+    function resolveFieldValue(id) {
+        var el = document.getElementById(id);
+        if (!el) return '';
+        var val = el.value;
+        if (val && val !== '__OTHER__') return val;
+        var wrap = el.parentElement && el.parentElement.querySelector('.sd-wrap');
+        if (!wrap) return val;
+        var otherInput = wrap.querySelector('.sd-other-input');
+        if (otherInput && otherInput.offsetParent !== null && otherInput.value.trim() !== '') {
+            return otherInput.value.trim();
+        }
+        return val;
+    }
+
+    /* ---- Collect header (shared) fields ---- */
+    var headerData = {
+        year: resolveFieldValue('year'),
+        cluster: resolveFieldValue('cluster'),
+        concerned_office_facility: resolveFieldValue('concerned_office_facility'),
+        municipality: resolveFieldValue('municipality'),
+        facility_level: resolveFieldValue('facility_level'),
+        presence_in_existing_plans: resolveFieldValue('presence_in_existing_plans')
     };
-    
-    // Validate required fields
-    if (
-        !formData.year ||
-        !formData.cluster ||
-        !formData.concerned_office_facility ||
-        !formData.facility_level ||
-        !formData.category ||
-        !formData.type_of_health_facility ||
-        formData.number_of_units === '' ||
-        !formData.target ||
-        formData.costing === '' ||
-        !formData.fund_source ||
-        !formData.presence_in_existing_plans
-    ) {
-        showMessage('Please fill in all required fields.', 'error');
+
+    // Validate header fields
+    if (!headerData.year || !headerData.cluster || !headerData.concerned_office_facility ||
+        !headerData.facility_level || !headerData.presence_in_existing_plans) {
+        showMessage('Please fill in all required header fields.', 'error');
         submitBtn.disabled = false;
         return;
     }
 
-    // Submit to API (path relative to current page, e.g. /PHO_HFDP_CONSO/api/create_record.php)
+    /* ---- Collect repeater items ---- */
+    var rows = document.querySelectorAll('#repeater-container .repeater-row');
+    var items = [];
+    var itemError = null;
+
+    rows.forEach(function(row, i) {
+        var catSel   = row.querySelector('.r-category');
+        var typSel   = row.querySelector('.r-type');
+        var specInp  = row.querySelector('.r-specify');
+        var unitsInp = row.querySelector('.r-units');
+        var costInp  = row.querySelector('.r-costing');
+        var fundSel  = row.querySelector('.r-fund');
+
+        var category = catSel ? catSel.value : '';
+        var typeVal  = '';
+        if (specInp && specInp.style.display !== 'none' && specInp.value.trim()) {
+            typeVal = specInp.value.trim().toUpperCase();
+        } else if (typSel) {
+            typeVal = typSel.value;
+        }
+        var units    = unitsInp ? unitsInp.value : '0';
+        var costing  = costInp ? formatCostingForDB(costInp.value) : '0';
+        var fund     = fundSel ? fundSel.value : '';
+
+        if (!category || !typeVal || !fund) {
+            itemError = 'Please fill in all required fields in Item #' + (i + 1) + '.';
+        }
+
+        items.push({
+            category: category,
+            type_of_health_facility: typeVal,
+            number_of_units: units,
+            costing: costing,
+            fund_source: fund
+        });
+    });
+
+    if (itemError) { showMessage(itemError, 'error'); submitBtn.disabled = false; return; }
+    if (items.length === 0) { showMessage('Please add at least one item.', 'error'); submitBtn.disabled = false; return; }
+
+    /* ---- Build payload ---- */
+    var payload = {
+        year: headerData.year,
+        cluster: headerData.cluster,
+        concerned_office_facility: headerData.concerned_office_facility,
+        municipality: headerData.municipality,
+        facility_level: headerData.facility_level,
+        presence_in_existing_plans: headerData.presence_in_existing_plans,
+        items: items
+    };
+
+    // Submit to API
     const apiUrl = new URL('api/create_record.php', window.location.href).href;
     fetch(apiUrl, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
     })
     .then(response => {
         if (response.status === 401) { window.location.href = 'login.php'; return; }
@@ -78,23 +128,32 @@ function handleFormSubmit(e) {
             if (!contentType || !contentType.includes('application/json')) {
                 throw new Error(text || 'Server returned non-JSON response');
             }
-            try {
-                return JSON.parse(text);
-            } catch (_) {
-                throw new Error(text || 'Invalid server response');
-            }
+            try { return JSON.parse(text); } catch (_) { throw new Error(text || 'Invalid server response'); }
         });
     })
     .then(data => {
         if (!data) { submitBtn.disabled = false; return; }
         if (data.success) {
-            showMessage('Record created successfully!', 'success');
+            showMessage(data.message || 'Record(s) created successfully!', 'success');
             document.getElementById('record-form').reset();
-            
-            // Redirect to dashboard after 2 seconds
-            setTimeout(() => {
-                window.location.href = 'index.php';
-            }, 2000);
+
+            // Remove extra repeater rows, keep only the first
+            var allRows = document.querySelectorAll('#repeater-container .repeater-row');
+            for (var i = allRows.length - 1; i > 0; i--) allRows[i].remove();
+
+            // Reset first row type dropdown
+            var firstRow = document.querySelector('#repeater-container .repeater-row');
+            if (firstRow) {
+                var tSel = firstRow.querySelector('.r-type');
+                if (tSel) { tSel.innerHTML = '<option value="">\u2014 Select Category first \u2014</option>'; tSel.disabled = true; }
+                var sp = firstRow.querySelector('.r-specify');
+                if (sp) { sp.style.display = 'none'; sp.required = false; sp.value = ''; }
+                firstRow.querySelectorAll('.r-costing-words').forEach(function(w) { w.textContent = ''; });
+            }
+            if (typeof updateRepeaterUI === 'function') updateRepeaterUI();
+            if (typeof updatePreview === 'function') updatePreview();
+
+            setTimeout(() => { window.location.href = 'index.php'; }, 2000);
         } else {
             showMessage('Error: ' + (data.message || 'Unknown error'), 'error');
         }

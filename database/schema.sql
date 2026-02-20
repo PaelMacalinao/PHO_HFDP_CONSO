@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS hfdp_records (
     year INT NOT NULL,
     cluster VARCHAR(100) NOT NULL,
     concerned_office_facility VARCHAR(255) NOT NULL,
+    municipality VARCHAR(255) DEFAULT NULL COMMENT 'Municipality derived from assigned facility',
     facility_level ENUM('BHS', 'PCF', 'HOSP') NOT NULL COMMENT 'BHS=Barangay Health Station, PCF=Primary Care Facility, HOSP=Hospital',
     category ENUM('INFRASTRUCTURE', 'EQUIPMENT', 'HUMAN RESOURCE', 'TRANSPORTATION') NOT NULL,
     type_of_health_facility VARCHAR(255),

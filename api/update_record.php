@@ -19,7 +19,7 @@ if (!isset($input['id']) || empty($input['id'])) {
 
 $id = intval($input['id']);
 
-// Validate required fields (remarks is optional)
+// Validate required fields
 $requiredKeys = [
     'year',
     'cluster',
@@ -28,7 +28,6 @@ $requiredKeys = [
     'category',
     'type_of_health_facility',
     'number_of_units',
-    'target',
     'costing',
     'fund_source',
     'presence_in_existing_plans'
@@ -52,7 +51,6 @@ $requiredStrings = [
     'facility_level',
     'category',
     'type_of_health_facility',
-    'target',
     'fund_source',
     'presence_in_existing_plans'
 ];
@@ -78,29 +76,28 @@ if (!is_numeric(preg_replace('/[^\d.]/', '', $input['costing']))) {
 $year = intval($input['year']);
 $cluster = $db->escape($input['cluster']);
 $concerned_office_facility = $db->escape($input['concerned_office_facility']);
+$municipality = $db->escape($input['municipality'] ?? '');
 $facility_level = $db->escape($input['facility_level']);
 $category = $db->escape($input['category']);
 $type_of_health_facility = $db->escape($input['type_of_health_facility']);
 $number_of_units = intval($input['number_of_units']);
 $facilities = $concerned_office_facility;
-$target = $db->escape($input['target']);
 $costing = floatval(preg_replace('/[^\d.]/', '', $input['costing']));
 $fund_source = $db->escape($input['fund_source']);
 $presence_in_existing_plans = $db->escape($input['presence_in_existing_plans']);
-$remarks = isset($input['remarks']) ? $db->escape($input['remarks']) : null;
 
 $sql = "UPDATE hfdp_records SET
-    year = ?, cluster = ?, concerned_office_facility = ?, facility_level = ?, category = ?,
-    type_of_health_facility = ?, number_of_units = ?, facilities = ?, target = ?, costing = ?,
-    fund_source = ?, presence_in_existing_plans = ?, remarks = ?
+    year = ?, cluster = ?, concerned_office_facility = ?, municipality = ?, facility_level = ?, category = ?,
+    type_of_health_facility = ?, number_of_units = ?, facilities = ?, costing = ?,
+    fund_source = ?, presence_in_existing_plans = ?
     WHERE id = ?";
 
 $stmt = $conn->prepare($sql);
 $stmt->bind_param(
-    'isssssisdsissi',
-    $year, $cluster, $concerned_office_facility, $facility_level, $category,
-    $type_of_health_facility, $number_of_units, $facilities, $target, $costing,
-    $fund_source, $presence_in_existing_plans, $remarks, $id
+    'issssssisdssi',
+    $year, $cluster, $concerned_office_facility, $municipality, $facility_level, $category,
+    $type_of_health_facility, $number_of_units, $facilities, $costing,
+    $fund_source, $presence_in_existing_plans, $id
 );
 
 if ($stmt->execute()) {
