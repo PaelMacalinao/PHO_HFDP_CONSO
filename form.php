@@ -295,6 +295,13 @@ if ($hasAssignedFacility) {
                             </select>
                         <?php endif; ?>
                     </div>
+                    <div class="form-group" id="barangayFieldWrapper" style="display:none; margin-top:6px;">
+                        <label for="barangayInput">Barangay</label>
+                        <div style="display:flex;gap:8px;align-items:center;">
+                            <div style="padding:6px 8px;background:#f1f7fb;border:1px solid #cfe8fb;border-radius:4px;font-weight:600;">BRGY.</div>
+                            <input type="text" id="barangayInput" name="barangay_name" class="form-control" placeholder="ENTER BARANGAY..." oninput="this.value = this.value.toUpperCase()">
+                        </div>
+                    </div>
                 </div><!-- /form-grid (header fields) -->
 
                 <!-- ═══ ITEM REPEATER ═══ -->
@@ -688,6 +695,24 @@ if ($hasAssignedFacility) {
             }
 
             updatePreview();
+        });
+
+        // Toggle Barangay field when Facility Level is BHS
+        document.addEventListener('DOMContentLoaded', function() {
+            var fl = document.getElementById('facility_level');
+            var wrapper = document.getElementById('barangayFieldWrapper');
+            var input = document.getElementById('barangayInput');
+            function toggleBarangay() {
+                var val = fl ? fl.value : '';
+                if (val === 'BHS') {
+                    if (wrapper) wrapper.style.display = 'block';
+                    if (input) { input.required = true; input.focus(); }
+                } else {
+                    if (wrapper) wrapper.style.display = 'none';
+                    if (input) { input.required = false; input.value = ''; }
+                }
+            }
+            if (fl) { fl.addEventListener('change', toggleBarangay); toggleBarangay(); }
         });
     </script>
 </body>

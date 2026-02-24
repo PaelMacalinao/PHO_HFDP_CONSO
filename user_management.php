@@ -299,6 +299,13 @@ try {
                                 <input type="text" id="autoCluster" readonly placeholder="—">
                             </div>
                         </div>
+                        <div class="form-group" id="barangayFieldWrapper" style="display:none; margin-top:10px;">
+                            <label for="barangayInput">Barangay</label>
+                            <div style="display:flex;gap:8px;align-items:center;">
+                                <div style="padding:6px 8px;background:#f1f7fb;border:1px solid #cfe8fb;border-radius:4px;font-weight:600;">BRGY.</div>
+                                <input type="text" id="barangayInput" name="barangay_name" class="form-control" placeholder="ENTER BARANGAY..." oninput="this.value = this.value.toUpperCase()">
+                            </div>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="password">Password <span class="required">*</span></label>
@@ -461,6 +468,10 @@ try {
             $('#assigned_facility').on('change', function() {
                 var selected = $(this).val();
                 var info = facilityDatabase[selected];
+                var facilityType = info ? info.type : '';
+                // Fallback: if not in DB, check the facility name for 'BHS'
+                if (!facilityType && selected && selected.toUpperCase().indexOf('BHS') !== -1) facilityType = 'BHS';
+
                 if (info) {
                     $('#autoMunicipality').val(info.municipality);
                     $('#autoFacilityType').val(info.type);
@@ -469,6 +480,15 @@ try {
                     $('#autoMunicipality').val('');
                     $('#autoFacilityType').val('');
                     $('#autoCluster').val('');
+                }
+
+                // Toggle Barangay input when facility type is BHS
+                if (facilityType && facilityType.toUpperCase() === 'BHS') {
+                    $('#barangayFieldWrapper').show();
+                    $('#barangayInput').prop('required', true).focus();
+                } else {
+                    $('#barangayFieldWrapper').hide();
+                    $('#barangayInput').prop('required', false).val('');
                 }
             });
 
