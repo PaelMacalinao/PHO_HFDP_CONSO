@@ -442,6 +442,7 @@ $assignedFacility = $_SESSION['assigned_facility'] ?? '';
                 <h2>Records</h2>
                 <div class="section-header-right">
                     <span class="record-count"><span id="record-count">0</span> record(s) found</span>
+                    <button type="button" id="btn-bulk-delete" class="btn btn-danger" disabled>Delete Selected</button>
                     <button type="button" id="btn-export-excel" class="btn btn-excel" title="Export to Excel (respects current filters)">
                         <span class="btn-excel-icon" aria-hidden="true">
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 2 5 5h-5V4zM8 12h2v2H8v-2zm0 4h2v2H8v-2zm4-4h2v2h-2v-2zm0 4h2v2h-2v-2zm4-4h2v2h-2v-2zm0 4h2v2h-2v-2z"/></svg>
@@ -456,6 +457,7 @@ $assignedFacility = $_SESSION['assigned_facility'] ?? '';
                 <table id="records-table" class="data-table">
                     <thead>
                         <tr>
+                            <th><input type="checkbox" id="select-all-records" aria-label="Select all records"></th>
                             <th>Year</th>
                             <th>Cluster</th>
                             <th>Concerned Office/Facility</th>
@@ -473,7 +475,7 @@ $assignedFacility = $_SESSION['assigned_facility'] ?? '';
                     </thead>
                     <tbody id="records-tbody">
                         <tr>
-                            <td colspan="13" class="no-data">Loading data...</td>
+                            <td colspan="14" class="no-data">Loading data...</td>
                         </tr>
                     </tbody>
                 </table>

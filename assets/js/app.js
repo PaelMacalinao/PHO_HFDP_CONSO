@@ -4,6 +4,7 @@
 
 // Global variables
 let currentFilters = {};
+let selectedRecordIds = new Set();
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
@@ -21,6 +22,28 @@ function setupEventListeners() {
     var exportBtn = document.getElementById('btn-export-excel');
     if (exportBtn) {
         exportBtn.addEventListener('click', exportToExcel);
+    }
+
+    // Bulk delete button
+    var bulkBtn = document.getElementById('btn-bulk-delete');
+    if (bulkBtn) {
+        bulkBtn.addEventListener('click', bulkDeleteSelected);
+        bulkBtn.disabled = true;
+    }
+
+    // "Select all" checkbox
+    var selectAll = document.getElementById('select-all-records');
+    if (selectAll) {
+        selectAll.addEventListener('change', function() {
+            const checked = this.checked;
+            selectedRecordIds.clear();
+            document.querySelectorAll('#records-tbody .record-select').forEach(function(cb) {
+                cb.checked = checked;
+                const id = parseInt(cb.getAttribute('data-id'), 10);
+                if (checked && !isNaN(id)) selectedRecordIds.add(id);
+            });
+            updateBulkDeleteButtonState();
+        });
     }
 
     // Modal close
@@ -41,7 +64,13 @@ function setupEventListeners() {
 // Load records with current filters
 function loadRecords() {
     const params = new URLSearchParams();
-    
+
+    // Reset selection on each load
+    selectedRecordIds.clear();
+    const bulkBtn = document.getElementById('btn-bulk-delete');
+    if (bulkBtn) bulkBtn.disabled = true;
+    const selectAll = document.getElementById('select-all-records');
+    if (selectAll) selectAll.checked = false;
     Object.keys(currentFilters).forEach(key => {
         if (currentFilters[key]) {
             params.append(key, currentFilters[key]);
@@ -65,7 +94,7 @@ function loadRecords() {
         .catch(error => {
             console.error('Error:', error);
             document.getElementById('records-tbody').innerHTML = 
-                '<tr><td colspan="12" class="no-data">Error loading data. Please try again.</td></tr>';
+                '<tr><td colspan="14" class="no-data">Error loading data. Please try again.</td></tr>';
         });
 }
 
@@ -74,12 +103,13 @@ function displayRecords(records) {
     const tbody = document.getElementById('records-tbody');
     
     if (records.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="12" class="no-data">No records found.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="14" class="no-data">No records found.</td></tr>';
         return;
     }
 
     tbody.innerHTML = records.map(record => `
         <tr>
+            <td><input type="checkbox" class="record-select" data-id="${record.id}"></td>
             <td>${record.year}</td>
             <td>${record.cluster}</td>
             <td>${record.concerned_office_facility || '-'}</td>
@@ -98,6 +128,76 @@ function displayRecords(records) {
             </td>
         </tr>
     `).join('');
+
+    // Attach change handlers for row checkboxes (selection tracking)
+    tbody.querySelectorAll('.record-select').forEach(function(cb) {
+        cb.addEventListener('change', function() {
+            const id = parseInt(this.getAttribute('data-id'), 10);
+            if (isNaN(id)) return;
+            if (this.checked) {
+                selectedRecordIds.add(id);
+            } else {
+                selectedRecordIds.delete(id);
+            }
+            syncSelectAllCheckbox();
+            updateBulkDeleteButtonState();
+        });
+    });
+}
+
+// Sync "select all" checkbox based on row selections
+function syncSelectAllCheckbox() {
+    const selectAll = document.getElementById('select-all-records');
+    if (!selectAll) return;
+    const checkboxes = document.querySelectorAll('#records-tbody .record-select');
+    if (checkboxes.length === 0) {
+        selectAll.checked = false;
+        return;
+    }
+    const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+    selectAll.checked = allChecked;
+}
+
+// Enable/disable bulk delete button based on selection
+function updateBulkDeleteButtonState() {
+    const bulkBtn = document.getElementById('btn-bulk-delete');
+    if (!bulkBtn) return;
+    bulkBtn.disabled = selectedRecordIds.size === 0;
+}
+
+// Bulk delete selected records
+function bulkDeleteSelected() {
+    if (selectedRecordIds.size === 0) return;
+    const ids = Array.from(selectedRecordIds);
+    if (!confirm('Are you sure you want to delete ' + ids.length + ' selected record(s)?')) {
+        return;
+    }
+
+    fetch('api/delete_record.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ ids: ids })
+    })
+    .then(response => {
+        if (response.status === 401) { window.location.href = 'login.php'; return; }
+        return response.json();
+    })
+    .then(data => {
+        if (!data) return;
+        if (data.success) {
+            alert(data.message || 'Selected records deleted successfully!');
+            selectedRecordIds.clear();
+            loadRecords();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error deleting records.');
+    });
 }
 
 // Format currency
