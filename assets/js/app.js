@@ -84,6 +84,7 @@ function displayRecords(records) {
             <td>${record.cluster}</td>
             <td>${record.concerned_office_facility || '-'}</td>
             <td>${record.municipality || '-'}</td>
+            <td>${record.barangay_name || '-'}</td>
             <td>${record.facility_level}</td>
             <td>${record.category}</td>
             <td>${record.type_of_health_facility || '-'}</td>
@@ -302,7 +303,7 @@ function editRecord(id) {
 }
 
 // Show edit modal
-function showEditModal(record) {
+    function showEditModal(record) {
     const modal = document.getElementById('edit-modal');
     const container = document.getElementById('edit-form-container');
     
@@ -337,6 +338,10 @@ function showEditModal(record) {
                 <div class="form-group">
                     <label for="edit-municipality">Municipality</label>
                     <input type="text" id="edit-municipality" value="${record.municipality || ''}">
+                </div>
+                <div class="form-group" id="edit-barangay-group" style="display:${record.facility_level === 'BHS' ? 'block' : 'none'};">
+                    <label for="edit-barangay_name">SPECIFY WHAT BRGY</label>
+                    <input type="text" id="edit-barangay_name" class="specify-input" placeholder="Please specify barangay..." style="margin-top:6px" value="${record.barangay_name || ''}">
                 </div>
                 <div class="form-group">
                     <label for="edit-facility_level">Facility Level <span class="required">*</span></label>
@@ -503,6 +508,19 @@ function showEditModal(record) {
     // Initialize with existing record values
     editPopulateTypeDropdown(record.category, record.type_of_health_facility);
 
+    // Toggle barangay field on facility level change
+    document.getElementById('edit-facility_level').addEventListener('change', function() {
+        var grp = document.getElementById('edit-barangay-group');
+        if (!grp) return;
+        if (this.value === 'BHS') {
+            grp.style.display = 'block';
+        } else {
+            grp.style.display = 'none';
+            var bInp = document.getElementById('edit-barangay_name');
+            if (bInp) bInp.value = '';
+        }
+    });
+
     // Add submit handler
     document.getElementById('edit-form').addEventListener('submit', function(e) {
         e.preventDefault();
@@ -539,6 +557,10 @@ function updateRecord() {
             return document.getElementById('edit-type_of_health_facility').value;
         })(),
         number_of_units: document.getElementById('edit-number_of_units').value,
+        barangay_name: (function() {
+            var el = document.getElementById('edit-barangay_name');
+            return el ? (el.value || '').trim().toUpperCase() : '';
+        })(),
         facilities: document.getElementById('edit-concerned_office_facility').value,
         costing: formatCostingForDB(document.getElementById('edit-costing').value),
         fund_source: document.getElementById('edit-fund_source').value,

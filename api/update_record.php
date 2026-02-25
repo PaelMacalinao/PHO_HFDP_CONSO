@@ -77,6 +77,7 @@ $year = intval($input['year']);
 $cluster = $db->escape($input['cluster']);
 $concerned_office_facility = $db->escape($input['concerned_office_facility']);
 $municipality = $db->escape($input['municipality'] ?? '');
+$barangay_name = $db->escape($input['barangay_name'] ?? '');
 $facility_level = $db->escape($input['facility_level']);
 $category = $db->escape($input['category']);
 $type_of_health_facility = $db->escape($input['type_of_health_facility']);
@@ -87,15 +88,15 @@ $fund_source = $db->escape($input['fund_source']);
 $presence_in_existing_plans = $db->escape($input['presence_in_existing_plans']);
 
 $sql = "UPDATE hfdp_records SET
-    year = ?, cluster = ?, concerned_office_facility = ?, municipality = ?, facility_level = ?, category = ?,
+    year = ?, cluster = ?, concerned_office_facility = ?, municipality = ?, barangay_name = ?, facility_level = ?, category = ?,
     type_of_health_facility = ?, number_of_units = ?, facilities = ?, costing = ?,
     fund_source = ?, presence_in_existing_plans = ?
     WHERE id = ?";
 
 $stmt = $conn->prepare($sql);
 $stmt->bind_param(
-    'issssssisdssi',
-    $year, $cluster, $concerned_office_facility, $municipality, $facility_level, $category,
+    'isssssssisdssi',
+    $year, $cluster, $concerned_office_facility, $municipality, $barangay_name, $facility_level, $category,
     $type_of_health_facility, $number_of_units, $facilities, $costing,
     $fund_source, $presence_in_existing_plans, $id
 );

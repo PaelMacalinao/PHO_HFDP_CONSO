@@ -21,6 +21,13 @@ if ($colCheck && $colCheck->num_rows === 0) {
 }
 if ($colCheck) $colCheck->free();
 
+// Ensure barangay_name column exists (for BHS barangay input)
+$colCheck2 = $conn->query("SHOW COLUMNS FROM hfdp_records LIKE 'barangay_name'");
+if ($colCheck2 && $colCheck2->num_rows === 0) {
+    $conn->query("ALTER TABLE hfdp_records ADD COLUMN barangay_name VARCHAR(255) DEFAULT NULL COMMENT 'Barangay name when facility level is BHS' AFTER municipality");
+}
+if ($colCheck2) $colCheck2->free();
+
 // Get JSON input
 $input = json_decode(file_get_contents('php://input'), true);
 if (!is_array($input)) {
@@ -48,15 +55,16 @@ if (isset($input['items']) && is_array($input['items']) && count($input['items']
     $cluster                   = trim($input['cluster']);
     $concerned_office_facility = trim($input['concerned_office_facility']);
     $municipality              = trim($input['municipality'] ?? '');
+    $barangay_name             = trim($input['barangay_name'] ?? '');
     $facility_level            = trim($input['facility_level']);
     $presence_in_existing_plans = trim($input['presence_in_existing_plans']);
     $facilities                = $concerned_office_facility;
 
     $sql = "INSERT INTO hfdp_records (
-        year, cluster, concerned_office_facility, municipality, facility_level, category,
+        year, cluster, concerned_office_facility, municipality, barangay_name, facility_level, category,
         type_of_health_facility, number_of_units, facilities, costing,
         fund_source, presence_in_existing_plans
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
     $stmt = $conn->prepare($sql);
     if (!$stmt) {
@@ -83,8 +91,8 @@ if (isset($input['items']) && is_array($input['items']) && count($input['items']
         }
 
         $stmt->bind_param(
-            'issssssisdss',
-            $year, $cluster, $concerned_office_facility, $municipality, $facility_level, $category,
+            'isssssssisdss',
+            $year, $cluster, $concerned_office_facility, $municipality, $barangay_name, $facility_level, $category,
             $type_of_health_facility, $number_of_units, $facilities, $costing,
             $fund_source, $presence_in_existing_plans
         );

@@ -460,6 +460,7 @@ $assignedFacility = $_SESSION['assigned_facility'] ?? '';
                             <th>Cluster</th>
                             <th>Concerned Office/Facility</th>
                             <th>Municipality</th>
+                            <th>Barangay</th>
                             <th>Facility Level</th>
                             <th>Category</th>
                             <th>Requested Item/Human Resource(HR)</th>
@@ -472,7 +473,7 @@ $assignedFacility = $_SESSION['assigned_facility'] ?? '';
                     </thead>
                     <tbody id="records-tbody">
                         <tr>
-                            <td colspan="12" class="no-data">Loading data...</td>
+                            <td colspan="13" class="no-data">Loading data...</td>
                         </tr>
                     </tbody>
                 </table>

@@ -52,6 +52,11 @@ function handleFormSubmit(e) {
         presence_in_existing_plans: resolveFieldValue('presence_in_existing_plans')
     };
 
+    var barangayInput = document.getElementById('barangayInput');
+    headerData.barangay_name = (headerData.facility_level === 'BHS' && barangayInput)
+        ? (barangayInput.value || '').trim().toUpperCase()
+        : '';
+
     // Validate header fields
     if (!headerData.year || !headerData.cluster || !headerData.concerned_office_facility ||
         !headerData.facility_level || !headerData.presence_in_existing_plans) {
@@ -108,6 +113,7 @@ function handleFormSubmit(e) {
         municipality: headerData.municipality,
         facility_level: headerData.facility_level,
         presence_in_existing_plans: headerData.presence_in_existing_plans,
+        barangay_name: headerData.barangay_name || '',
         items: items
     };
 

@@ -59,7 +59,7 @@ if ($presence_plans !== null && $presence_plans !== '') {
 }
 
 $whereClause = !empty($where) ? "WHERE " . implode(" AND ", $where) : "";
-$sql = "SELECT id, year, cluster, concerned_office_facility, municipality, facility_level, category, type_of_health_facility, number_of_units, facilities, costing, fund_source, presence_in_existing_plans FROM hfdp_records $whereClause ORDER BY year ASC, concerned_office_facility ASC";
+$sql = "SELECT id, year, cluster, concerned_office_facility, municipality, barangay_name, facility_level, category, type_of_health_facility, number_of_units, facilities, costing, fund_source, presence_in_existing_plans FROM hfdp_records $whereClause ORDER BY year ASC, concerned_office_facility ASC";
 $stmt = $conn->prepare($sql);
 if (!empty($params)) {
     $stmt->bind_param($types, ...$params);
@@ -73,6 +73,7 @@ $headers = [
     'Cluster',
     'Concerned Office / Facility',
     'Municipality',
+    'Barangay',
     'BHS/PCF/HOSP (Facility Level)',
     'INFRA/EQUIP/HR (Category)',
     'Requested Item/Human Resource(HR)',
@@ -102,6 +103,7 @@ while ($row = $result->fetch_assoc()) {
         $row['cluster'],
         $row['concerned_office_facility'],
         $row['municipality'] ?? '',
+        $row['barangay_name'] ?? '',
         $row['facility_level'],
         $row['category'],
         $row['type_of_health_facility'],

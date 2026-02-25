@@ -296,11 +296,16 @@ if ($hasAssignedFacility) {
                         <?php endif; ?>
                     </div>
                     <div class="form-group" id="barangayFieldWrapper" style="display:none; margin-top:6px;">
-                        <label for="barangayInput">Barangay</label>
-                        <div style="display:flex;gap:8px;align-items:center;">
-                            <div style="padding:6px 8px;background:#f1f7fb;border:1px solid #cfe8fb;border-radius:4px;font-weight:600;">BRGY.</div>
-                            <input type="text" id="barangayInput" name="barangay_name" class="form-control" placeholder="ENTER BARANGAY..." oninput="this.value = this.value.toUpperCase()">
-                        </div>
+                        <label for="barangayInput">SPECIFY WHAT BRGY</label>
+                        <input
+                            type="text"
+                            id="barangayInput"
+                            name="barangay_name"
+                            class="specify-input"
+                            placeholder="Please specify barangay..."
+                            style="margin-top:4px"
+                            oninput="this.value = this.value.toUpperCase()"
+                        >
                     </div>
                 </div><!-- /form-grid (header fields) -->
 
