@@ -78,6 +78,9 @@ function displayRecords(records) {
         return;
     }
 
+    var userRole = document.documentElement.getAttribute('data-user-role') || 'staff';
+    var isAdmin = userRole === 'admin';
+
     tbody.innerHTML = records.map(record => `
         <tr>
             <td>${record.year}</td>
@@ -94,6 +97,7 @@ function displayRecords(records) {
             <td>${record.presence_in_existing_plans || '-'}</td>
             <td>
                 <button class="btn btn-edit" onclick="editRecord(${record.id})">Edit</button>
+                ${isAdmin ? `<button class="btn btn-danger" onclick="deleteRecord(${record.id})">Delete</button>` : ''}
             </td>
         </tr>
     `).join('');
@@ -600,6 +604,35 @@ function updateRecord() {
     .catch(error => {
         console.error('Error:', error);
         alert('Error updating record.');
+    });
+}
+
+// Delete record (admin only; button shown only for admin)
+function deleteRecord(id) {
+    if (!confirm('Are you sure you want to delete this record?')) {
+        return;
+    }
+    fetch('api/delete_record.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: id })
+    })
+    .then(response => {
+        if (response.status === 401) { window.location.href = 'login.php'; return; }
+        return response.json();
+    })
+    .then(data => {
+        if (!data) return;
+        if (data.success) {
+            alert('Record deleted successfully!');
+            loadRecords();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error deleting record.');
     });
 }
 
