@@ -57,10 +57,18 @@ function handleFormSubmit(e) {
         ? (barangayInput.value || '').trim().toUpperCase()
         : '';
 
-    // Validate header fields
-    if (!headerData.year || !headerData.cluster || !headerData.concerned_office_facility ||
-        !headerData.facility_level || !headerData.presence_in_existing_plans) {
+    // Validate header fields and scroll to first empty
+    var headerFields = [
+        { id: 'year', val: headerData.year },
+        { id: 'cluster', val: headerData.cluster },
+        { id: 'concerned_office_facility', val: headerData.concerned_office_facility },
+        { id: 'facility_level', val: headerData.facility_level },
+        { id: 'presence_in_existing_plans', val: headerData.presence_in_existing_plans }
+    ];
+    var firstEmpty = headerFields.find(function(f) { return !f.val; });
+    if (firstEmpty) {
         showMessage('Please fill in all required header fields.', 'error');
+        scrollToAndFocus(firstEmpty.id);
         submitBtn.disabled = false;
         return;
     }
@@ -90,7 +98,10 @@ function handleFormSubmit(e) {
         var fund     = fundSel ? fundSel.value : '';
 
         if (!category || !typeVal || !fund) {
-            itemError = 'Please fill in all required fields in Item #' + (i + 1) + '.';
+            if (!itemError) {
+                var targetEl = !category ? catSel : (!typeVal ? (specInp && specInp.style.display !== 'none' ? specInp : typSel) : fundSel);
+                itemError = { message: 'Please fill in all required fields in Item #' + (i + 1) + '.', target: targetEl || row };
+            }
         }
 
         items.push({
@@ -102,8 +113,19 @@ function handleFormSubmit(e) {
         });
     });
 
-    if (itemError) { showMessage(itemError, 'error'); submitBtn.disabled = false; return; }
-    if (items.length === 0) { showMessage('Please add at least one item.', 'error'); submitBtn.disabled = false; return; }
+    if (itemError) {
+        showMessage(itemError.message, 'error');
+        scrollToAndFocusEl(itemError.target);
+        submitBtn.disabled = false;
+        return;
+    }
+    if (items.length === 0) {
+        showMessage('Please add at least one item.', 'error');
+        var firstRow = document.querySelector('#repeater-container .repeater-row');
+        if (firstRow) scrollToAndFocusEl(firstRow);
+        submitBtn.disabled = false;
+        return;
+    }
 
     /* ---- Build payload ---- */
     var payload = {
@@ -170,6 +192,30 @@ function handleFormSubmit(e) {
         showMessage('Error: ' + (error.message || 'Please try again.'), 'error');
         submitBtn.disabled = false;
     });
+}
+
+// Scroll to element and focus it (for validation errors)
+// Handles searchable dropdowns: when the native select is hidden, focus the visible .sd-trigger
+function scrollToAndFocus(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    var target = el;
+    if (el.offsetParent === null || el.style.display === 'none') {
+        var wrap = el.nextElementSibling;
+        if (wrap && wrap.classList.contains('sd-wrap')) {
+            var trigger = wrap.querySelector('.sd-trigger');
+            if (trigger) target = trigger;
+        }
+    }
+    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    target.focus();
+}
+
+function scrollToAndFocusEl(el) {
+    if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (el.focus) el.focus();
+    }
 }
 
 // Show message
