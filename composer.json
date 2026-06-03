@@ -1,0 +1,11 @@
+{
+    "name": "pho/pho-hfdp-conso",
+    "description": "PHO CONSO HFDP",
+    "require": {
+        "php": ">=7.4",
+        "phpoffice/phpspreadsheet": "^1.29"
+    },
+    "config": {
+        "optimize-autoloader": true
+    }
+}

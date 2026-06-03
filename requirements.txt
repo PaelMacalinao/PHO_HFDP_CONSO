@@ -1,0 +1,30 @@
+PHO CONSO HFDP Website Requirements
+
+Required software:
+- PHP 7.4 or higher
+- MySQL 5.7 or higher (or MariaDB 10.2+)
+- Apache web server
+- XAMPP recommended for Windows users
+
+Required PHP extensions:
+- mysqli
+- mbstring
+- json
+- fileinfo
+- openssl
+
+Optional tools:
+- Composer (for dependency management)
+- phpMyAdmin (for database import and configuration)
+
+First-time user guidance:
+- You do not need to install Python, Pip, or VS Code-specific package managers for this website.
+- The site runs on PHP and MySQL, so install XAMPP and use its Apache/MySQL services.
+- You can use any editor or browser to view and edit the files; VS Code is optional.
+- If you use VS Code, it is only for editing; it is not required to run the website.
+
+Deployment notes:
+- Place the project folder in the web server document root (for example, C:\xampp\htdocs\PHO_HFDP_CONSO)
+- Update `config/database.php` with your database credentials
+- Import the database schema from `database/schema.sql`
+- Start Apache and MySQL services before accessing the site

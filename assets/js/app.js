@@ -309,7 +309,41 @@ function editRecord(id) {
     function showEditModal(record) {
     const modal = document.getElementById('edit-modal');
     const container = document.getElementById('edit-form-container');
-    
+    const userRole = document.documentElement.getAttribute('data-user-role') || 'staff';
+    const isStaffEditor = userRole === 'staff';
+
+    const clusterHtml = isStaffEditor
+        ? `<div class="form-group">
+                    <label for="edit-cluster">Cluster <span class="required">*</span></label>
+                    <input type="text" id="edit-cluster" class="readonly-field" value="${escapeHtml(record.cluster || '')}" readonly required>
+                </div>`
+        : `<div class="form-group">
+                    <label for="edit-cluster">Cluster <span class="required">*</span></label>
+                    <select id="edit-cluster" required>
+                        <option value="REDCATS" ${record.cluster == 'REDCATS' ? 'selected' : ''}>REDCATS</option>
+                        <option value="BCCL" ${record.cluster == 'BCCL' ? 'selected' : ''}>BCCL</option>
+                        <option value="CAM" ${record.cluster == 'CAM' ? 'selected' : ''}>CAM</option>
+                        <option value="NABBrRBEQ-K" ${record.cluster == 'NABBrRBEQ-K' ? 'selected' : ''}>NABBrRBEQ-K</option>
+                    </select>
+                </div>`;
+
+    const concernedHtml = isStaffEditor
+        ? `<div class="form-group full-width">
+                    <label for="edit-concerned_office_facility">Concerned Office / Facility <span class="required">*</span></label>
+                    <input type="text" id="edit-concerned_office_facility" class="readonly-field" value="${escapeHtml(record.concerned_office_facility || '')}" readonly required>
+                </div>`
+        : `<div class="form-group full-width">
+                    <label for="edit-concerned_office_facility">Concerned Office / Facility <span class="required">*</span></label>
+                    <select id="edit-concerned_office_facility" required>
+                        ${generateConcernedOfficeOptions(record.concerned_office_facility)}
+                    </select>
+                </div>`;
+
+    const municipalityHtml = `<div class="form-group">
+                    <label for="edit-municipality">Municipality</label>
+                    <input type="text" id="edit-municipality" value="${escapeHtml(record.municipality || '')}"${isStaffEditor ? ' class="readonly-field" readonly' : ''}>
+                </div>`;
+
     container.innerHTML = `
         <form id="edit-form" class="data-form">
             <input type="hidden" id="edit-id" value="${record.id}">
@@ -323,25 +357,9 @@ function editRecord(id) {
                         }).join('')}
                     </select>
                 </div>
-                <div class="form-group">
-                    <label for="edit-cluster">Cluster <span class="required">*</span></label>
-                    <select id="edit-cluster" required>
-                        <option value="REDCATS" ${record.cluster == 'REDCATS' ? 'selected' : ''}>REDCATS</option>
-                        <option value="BCCL" ${record.cluster == 'BCCL' ? 'selected' : ''}>BCCL</option>
-                        <option value="CAM" ${record.cluster == 'CAM' ? 'selected' : ''}>CAM</option>
-                        <option value="NABBrRBEQ-K" ${record.cluster == 'NABBrRBEQ-K' ? 'selected' : ''}>NABBrRBEQ-K</option>
-                    </select>
-                </div>
-                <div class="form-group full-width">
-                    <label for="edit-concerned_office_facility">Concerned Office / Facility <span class="required">*</span></label>
-                    <select id="edit-concerned_office_facility" required>
-                        ${generateConcernedOfficeOptions(record.concerned_office_facility)}
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="edit-municipality">Municipality</label>
-                    <input type="text" id="edit-municipality" value="${record.municipality || ''}">
-                </div>
+                ${clusterHtml}
+                ${concernedHtml}
+                ${municipalityHtml}
                 <div class="form-group" id="edit-barangay-group" style="display:${record.facility_level === 'BHS' ? 'block' : 'none'};">
                     <label for="edit-barangay_name">SPECIFY WHAT BRGY</label>
                     <input type="text" id="edit-barangay_name" class="specify-input" placeholder="Please specify barangay..." style="margin-top:6px" value="${record.barangay_name || ''}">

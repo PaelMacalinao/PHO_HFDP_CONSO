@@ -1172,12 +1172,18 @@ header.unified-header nav a.active {
 /* ----- Table ----- */
 .table-container {
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
     border-radius: var(--radius-sm);
     border: 1px solid var(--border-color);
 }
 
+.table-container::-webkit-scrollbar {
+    height: 8px;
+}
+
 .data-table {
     width: 100%;
+    min-width: 900px;
     border-collapse: collapse;
     font-size: 13px;
 }
@@ -1706,6 +1712,114 @@ header.unified-header nav a.active {
     .section-header {
         flex-direction: column;
         align-items: flex-start;
+    }
+
+    .section-header-right {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .section-header-right .btn,
+    .section-header-right .record-count {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .data-section {
+        padding: 14px 16px;
+    }
+
+    .filters-section {
+        padding: 14px 16px;
+    }
+
+    .filters-header-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .filter-actions {
+        flex-direction: column;
+    }
+
+    .filter-actions .btn {
+        width: 100%;
+    }
+
+    .modal-content {
+        width: 96%;
+        margin: 2% auto;
+        padding: 20px 16px;
+        max-height: 95vh;
+    }
+
+    .modal-content h2 {
+        font-size: 1.1rem;
+        padding-right: 32px;
+    }
+
+    .close {
+        right: 12px;
+        top: 12px;
+        font-size: 24px;
+    }
+}
+
+@media (max-width: 576px) {
+    .container {
+        padding: 12px 16px;
+    }
+
+    .data-table {
+        font-size: 11px;
+        min-width: 800px;
+    }
+
+    .data-table th,
+    .data-table td {
+        padding: 8px 6px;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        min-height: 44px;
+        font-size: 16px;
+    }
+
+    .form-actions {
+        flex-direction: column;
+    }
+
+    .form-actions .btn {
+        width: 100%;
+    }
+
+    .btn-edit,
+    .btn-danger {
+        min-height: 36px;
+        padding: 8px 12px;
+    }
+
+    .form-section {
+        padding: 16px 14px;
+    }
+
+    .sd-trigger {
+        min-height: 44px;
+    }
+
+    .btn,
+    .btn-primary,
+    .btn-excel {
+        min-height: 44px;
+        padding: 12px 16px;
+    }
+
+    .filters-grid .filter-group select {
+        min-height: 44px;
+        font-size: 16px;
     }
 }
 

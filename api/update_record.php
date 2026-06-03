@@ -3,6 +3,7 @@
  * API Endpoint: Update Record
  */
 require_once __DIR__ . '/../includes/api_auth.php';
+require_once __DIR__ . '/../includes/auth.php';
 header('Content-Type: application/json');
 require_once __DIR__ . '/../config/database.php';
 
@@ -18,6 +19,30 @@ if (!isset($input['id']) || empty($input['id'])) {
 }
 
 $id = intval($input['id']);
+
+// Staff cannot change facility, cluster, or municipality — lock to DB + assigned facility
+$lookup = $conn->prepare('SELECT cluster, concerned_office_facility, municipality FROM hfdp_records WHERE id = ? LIMIT 1');
+$lookup->bind_param('i', $id);
+$lookup->execute();
+$rowExisting = $lookup->get_result()->fetch_assoc();
+$lookup->close();
+
+if (!$rowExisting) {
+    echo json_encode(['success' => false, 'message' => 'Record not found']);
+    exit;
+}
+
+if (isStaff()) {
+    $assigned = getAssignedFacility();
+    if (!$assigned || trim((string) $rowExisting['concerned_office_facility']) !== trim((string) $assigned)) {
+        header('HTTP/1.1 403 Forbidden');
+        echo json_encode(['success' => false, 'message' => 'Access denied.']);
+        exit;
+    }
+    $input['cluster'] = $rowExisting['cluster'];
+    $input['concerned_office_facility'] = $rowExisting['concerned_office_facility'];
+    $input['municipality'] = $rowExisting['municipality'] ?? '';
+}
 
 // Validate required fields
 $requiredKeys = [
